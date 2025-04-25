@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="fw-bold">Dashboard</h2>
+            <p class="text-muted">Overview of your Sacco's key metrics and quick actions.</p>
+        </div>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Members</h5>
+                    <h3 class="fw-bold">{{ total_members|default:'0' }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Savings</h5>
+                    <h3 class="fw-bold">{{ total_savings|default:'0.00' }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Loans</h5>
+                    <h3 class="fw-bold">{{ total_loans|default:'0.00' }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="col">
+            <a href="{% url 'member-add' %}" class="btn btn-success me-2">Add Member</a>
+            <a href="{% url 'loans' %}" class="btn btn-primary me-2">View Loans</a>
+            <a href="{% url 'savings' %}" class="btn btn-info text-white">View Savings</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
