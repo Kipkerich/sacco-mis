@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<div id="layoutSidenav_content">
+    <main>
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="fw-bold">Member Details</h2>
+        </div>
+    </div>
+    <div class="card shadow border-0 mb-4">
+        <div class="card-body">
+            <h4 class="card-title">{{ member.name }} <small class="text-muted">({{ member.membership_number }})</small></h4>
+            <p class="mb-1"><strong>Type:</strong> {% if member.type == 1 %}Junior{% else %}Normal{% endif %}</p>
+            <p class="mb-1"><strong>Date of Birth:</strong> {{ member.date_of_birth }}</p>
+            <p class="mb-1"><strong>Email:</strong> {{ member.email }}</p>
+            <p class="mb-1"><strong>Phone:</strong> {{ member.phone }}</p>
+            <p class="mb-1"><strong>Address:</strong> {{ member.address }}</p>
+            <p class="mb-1"><strong>Status:</strong> {% if member.status %}Active{% else %}Inactive{% endif %}</p>
+            <p class="mb-1"><strong>Date Joined:</strong> {{ member.date_joined }}</p>
+        </div>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Savings</h5>
+                    <p><strong>Total Saved:</strong> {{ member.total_saved }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Loans</h5>
+                    <p><strong>Pending Loan:</strong> {{ member.pending_loan }}</p>
+                    <p><strong>Amount Repaid:</strong> {{ member.amount_repaid }}</p>
+                    <p><strong>Due Date:</strong> {{ member.due_date }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
