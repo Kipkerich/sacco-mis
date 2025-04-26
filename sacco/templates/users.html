@@ -41,8 +41,16 @@
                                     <td>
                                         {% if profile.type == 1 %}
                                             <span class="badge bg-info">Admin</span>
-                                        {% else %}
+                                        {% elif profile.type == 2 %}
                                             <span class="badge bg-secondary">Staff</span>
+                                        {% elif profile.type == 3 %}
+                                            <span class="badge bg-success">Accountant</span>
+                                        {% elif profile.type == 4 %}
+                                            <span class="badge bg-warning text-dark">Supervisor</span>
+                                        {% elif profile.type == 5 %}
+                                            <span class="badge bg-primary">General Manager</span>
+                                        {% else %}
+                                            <span class="badge bg-dark">Unknown</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
@@ -92,7 +100,9 @@
             <label for="id_type" class="form-label">Type</label>
             <select class="form-select" id="id_type" name="type" required>
               <option value="1">Admin</option>
-              <option value="2">Staff</option>
+              <option value="3">Accountant</option>
+              <option value="4">Supervisor</option>
+              <option value="5">General Manager</option>
             </select>
           </div>
           <div class="mb-3">
@@ -138,6 +148,9 @@
             <select class="form-select" id="edit_type" name="type" required>
               <option value="1">Admin</option>
               <option value="2">Staff</option>
+              <option value="3">Accountant</option>
+              <option value="4">Supervisor</option>
+              <option value="5">General Manager</option>
             </select>
           </div>
           <div class="mb-3">

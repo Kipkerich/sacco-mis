@@ -29,9 +29,14 @@
                         <td>{{ loan.status }}</td>
                         <td>{{ loan.due_date }}</td>
                         <td>
-                            <a href="#" class="btn btn-primary btn-sm">View</a>
-                            <a href="#" class="btn btn-success btn-sm">Repay</a>
-                            <a href="#" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editLoanModal" data-loan-id="{{ loan.id }}" data-ref_number="{{ loan.member.ref_number }}" data-amount="{{ loan.amount }}" data-status="{{ loan.status }}" data-due_date="{{ loan.due_date }}">Edit</a>
+                            <a href="{% url 'loan-detail' loan.id %}" class="btn btn-primary btn-sm">View</a>
+                            <a href="{% url 'loan-repayments-list' loan.id %}" class="btn btn-success btn-sm">Repay</a>
+                            <a href="#" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editLoanModal" 
+                               data-loan-id="{{ loan.id }}" data-ref_number="{{ loan.member.ref_number }}" 
+                               data-amount="{{ loan.amount }}" data-status="{{ loan.status }}" data-due_date="{{ loan.due_date }}"
+                               data-member-name="{{ loan.member.name }}" data-member-email="{{ loan.member.email }}" 
+                               data-member-phone="{{ loan.member.phone }}" data-loan-plan-id="{{ loan.loan_plan.id }}" 
+                               data-date-issued="{{ loan.date_issued }}">Edit</a>
                         </td>
                     </tr>
                     {% empty %}
@@ -78,7 +83,8 @@
           </div>
           <div class="mb-3">
             <label for="amount" class="form-label">Loan Amount</label>
-            <input type="number" class="form-control" id="amount" name="amount" required>
+            <input type="number" class="form-control" id="amount" name="amount" required oninput="validateAmount()" value="0.00">
+            <div id="amount-warning" class="text-danger small mt-1" style="display:none;">Loan amount cannot be more than 500,000</div>
           </div>
           <div class="mb-3">
             <label for="status" class="form-label">Status</label>
@@ -125,6 +131,18 @@
             <div id="edit-member-details" class="form-text text-success"></div>
           </div>
           <div class="mb-3">
+            <label for="edit-member-name" class="form-label">Member Name</label>
+            <input type="text" class="form-control" id="edit-member-name" name="member_name" readonly>
+          </div>
+          <div class="mb-3">
+            <label for="edit-member-email" class="form-label">Member Email</label>
+            <input type="email" class="form-control" id="edit-member-email" name="member_email" readonly>
+          </div>
+          <div class="mb-3">
+            <label for="edit-member-phone" class="form-label">Member Phone</label>
+            <input type="text" class="form-control" id="edit-member-phone" name="member_phone" readonly>
+          </div>
+          <div class="mb-3">
             <label for="edit-loan_plan" class="form-label">Loan Plan</label>
             <select class="form-select" id="edit-loan_plan" name="loan_plan" required>
               <option value="" disabled selected>Select a loan plan</option>
@@ -135,7 +153,7 @@
           </div>
           <div class="mb-3">
             <label for="edit-amount" class="form-label">Loan Amount</label>
-            <input type="number" class="form-control" id="edit-amount" name="amount" required>
+            <input type="number" class="form-control" id="edit-amount" name="amount" required onchange="validateAmount()">
           </div>
           <div class="mb-3">
             <label for="edit-status" class="form-label">Status</label>
@@ -151,6 +169,10 @@
             <label for="edit-due_date" class="form-label">Due Date</label>
             <input type="date" class="form-control" id="edit-due_date" name="due_date" required>
           </div>
+          <div class="mb-3">
+            <label for="edit-date_issued" class="form-label">Date Issued</label>
+            <input type="date" class="form-control" id="edit-date_issued" name="date_issued" readonly>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -162,6 +184,24 @@
 </div>
 
 <script>
+  function validateAmount() {
+    var amountInput = document.getElementById('amount');
+    var warning = document.getElementById('amount-warning');
+    if (amountInput && warning) {
+      if (parseFloat(amountInput.value) > 500000) {
+        warning.style.display = 'block';
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+    // Edit modal validation (existing)
+    var editAmount = document.getElementById('edit-amount');
+    if (editAmount && editAmount.value && editAmount.value > 5000000) {
+      alert('Loan amount cannot be more than 5,000,000');
+      editAmount.value = '';
+    }
+  }
+
 // Populate Edit Loan Modal with loan data
 var editLoanModal = document.getElementById('editLoanModal');
 editLoanModal.addEventListener('show.bs.modal', function (event) {
@@ -171,6 +211,12 @@ editLoanModal.addEventListener('show.bs.modal', function (event) {
   var amount = button.getAttribute('data-amount');
   var status = button.getAttribute('data-status');
   var due_date = button.getAttribute('data-due_date');
+  // Add new fields
+  var memberName = button.getAttribute('data-member-name');
+  var memberEmail = button.getAttribute('data-member-email');
+  var memberPhone = button.getAttribute('data-member-phone');
+  var loanPlanId = button.getAttribute('data-loan-plan-id');
+  var dateIssued = button.getAttribute('data-date-issued');
 
   var modal = this;
   modal.querySelector('#edit-loan-id').value = loanId;
@@ -178,16 +224,26 @@ editLoanModal.addEventListener('show.bs.modal', function (event) {
   modal.querySelector('#edit-amount').value = amount;
   modal.querySelector('#edit-status').value = status;
   modal.querySelector('#edit-due_date').value = due_date;
+  modal.querySelector('#edit-member-name').value = memberName || '';
+  modal.querySelector('#edit-member-email').value = memberEmail || '';
+  modal.querySelector('#edit-member-phone').value = memberPhone || '';
+  modal.querySelector('#edit-date_issued').value = dateIssued || '';
   modal.querySelector('#edit-member-details').textContent = '';
 
-  // Set status dropdown in Edit Loan Modal
+  // Set loan plan dropdown
+  var planSelect = document.getElementById('edit-loan_plan');
+  if (planSelect && loanPlanId) {
+    for (var i = 0; i < planSelect.options.length; i++) {
+      planSelect.options[i].selected = planSelect.options[i].value == loanPlanId;
+    }
+  }
+  // Set status dropdown
   var statusSelect = document.getElementById('edit-status');
   if (statusSelect) {
     for (var i = 0; i < statusSelect.options.length; i++) {
       statusSelect.options[i].selected = statusSelect.options[i].value === status;
     }
   }
-
   // Set the form action dynamically
   document.getElementById('editLoanForm').action = `/loans/${loanId}/edit/`;
 });

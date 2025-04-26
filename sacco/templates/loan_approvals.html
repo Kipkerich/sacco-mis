@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="fw-bold">Loan Approvals</h2>
+            <p class="text-muted">Review, approve, or reject pending loan applications.</p>
+        </div>
+    </div>
+    <div class="card shadow border-0">
+        <div class="card-body">
+            {% if loans %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Membership No.</th>
+                            <th>Loan Plan</th>
+                            <th>Amount</th>
+                            <th>Date Applied</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        <tr>
+                            <td>{{ loan.member.name }}</td>
+                            <td>{{ loan.member.membership_number }}</td>
+                            <td>{{ loan.loan_plan.name }}</td>
+                            <td>{{ loan.amount }}</td>
+                            <td>{{ loan.date_issued }}</td>
+                            <td>
+                                <form method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                </form>
+                                <form method="post" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                                    <input type="hidden" name="action" value="reject">
+                                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">There are no pending loan applications at this time.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

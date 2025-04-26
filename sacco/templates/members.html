@@ -29,35 +29,35 @@
 
                         </thead>
                         <tbody>
-                            {% for member in members %}
+                            {% for data in members_data %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
-                                <td>{{ member.membership_number }}</td>
-                                <td>{{ member.name }}</td>
-                                <td>{{ member.pending_loan|default:'0.00' }}</td>
-                                <td>{{ member.total_saved|default:'0.00' }}</td>
-                                <td>{{ member.amount_repaid|default:'0.00' }}</td>
-                                <td>{{ member.due_date|date:'Y-m-d' }}</td>
-                                <td>{% if member.type == 1 %}Junior{% else %}Normal{% endif %}</td>
+                                <td>{{ data.member.membership_number }}</td>
+                                <td>{{ data.member.name }}</td>
+                                <td>{{ data.pending_loan|floatformat:2 }}</td>
+                                <td>{{ data.total_saved|floatformat:2 }}</td>
+                                <td>{{ data.amount_repaid|floatformat:2 }}</td>
+                                <td>{% if data.due_date %}{{ data.due_date|date:'Y-m-d' }}{% else %}-{% endif %}</td>
+                                <td>{% if data.member.type == 1 %}Junior{% else %}Normal{% endif %}</td>
                                 <td>
                                     <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editMemberModal"
-                                        data-id="{{ member.id }}"
-                                        data-type="{{ member.type }}"
-                                        data-name="{{ member.name }}"
-                                        data-date_of_birth="{{ member.date_of_birth|date:'Y-m-d' }}"
-                                        data-membership_number="{{ member.membership_number }}"
-                                        data-email="{{ member.email }}"
-                                        data-phone="{{ member.phone }}"
-                                        data-address="{{ member.address }}"
-                                        data-status="{{ member.status }}">
+                                        data-id="{{ data.member.id }}"
+                                        data-type="{{ data.member.type }}"
+                                        data-name="{{ data.member.name }}"
+                                        data-date_of_birth="{{ data.member.date_of_birth|date:'Y-m-d' }}"
+                                        data-membership_number="{{ data.member.membership_number }}"
+                                        data-email="{{ data.member.email }}"
+                                        data-phone="{{ data.member.phone }}"
+                                        data-address="{{ data.member.address }}"
+                                        data-status="{{ data.member.status }}">
                                         Edit
                                     </a>
-                                    <a href="{% url 'member-delete' member.id %}" class="btn btn-danger btn-sm">Delete</a>
+                                    <a href="{% url 'member-delete' data.member.id %}" class="btn btn-danger btn-sm">Delete</a>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No members found.</td>
+                                <td colspan="9" class="text-center">No members found.</td>
                             </tr>
                             {% endfor %}
                         </tbody>

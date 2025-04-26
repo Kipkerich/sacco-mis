@@ -18,7 +18,7 @@ urlpatterns = [
     path('members/add/', views.member_add, name='member-add'),
     path('members/<int:id>/edit/', views.member_edit, name='member-edit'),
     path('members/<int:id>/delete/', views.member_delete, name='member-delete'),
-    path('', views.dashboard, name='dashboard'),
+    path('dashboard/', views.home_view, name='dashboard'),
     path('members/<int:id>/', views.member_detail, name='member-detail'),
     path('members/search/', views.member_search_by_ref_number, name='member-search-by-ref'),
 
@@ -31,11 +31,14 @@ urlpatterns = [
     # Loans
     path('loans/', views.loans_list, name='loans'),
     path('loans/add/', views.loan_add, name='loan-add'),
-    path('loans/<int:id>/edit/', views.loan_edit, name='loan-edit'),
-    path('loans/<int:id>/delete/', views.loan_delete, name='loan-delete'),
+    path('loans/<int:loan_id>/edit/', views.loan_edit, name='loan-edit'),
+    path('loans/<int:loan_id>/delete/', views.loan_delete, name='loan-delete'),
+    path('loans/<int:loan_id>/', views.loan_detail, name='loan-detail'),
 
     # Loan Repayment
     path('loans/<int:loan_id>/repay/', views.loan_repayment, name='loan-repayment'),
+    path('loans/<int:loan_id>/repayments/', views.loan_repayments_list, name='loan-repayments-list'),
+    path('repayments/', views.repayments_page, name='repayments-page'),
 
     # Borrowers
     path('borrowers/', views.borrowers_list, name='borrowers-url'),
@@ -45,6 +48,9 @@ urlpatterns = [
     path('loan-product-types/', views.loan_product_type_list, name='loan-product-type-list'),
     path('loan-product-types/<int:id>/edit/', views.loan_product_type_edit, name='loan-product-type-edit'),
     path('loan-product-types/<int:id>/delete/', views.loan_product_type_delete, name='loan-product-type-delete'),
+
+    # Loan Approvals
+    path('loan-approvals/', views.loan_approvals, name='loan-approvals'),
 
     # Reports
     path('reports/', views.reports, name='reports'),
