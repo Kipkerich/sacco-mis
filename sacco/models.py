@@ -8,7 +8,7 @@ class Profile(models.Model):
     name = models.CharField(max_length=100, default='name', null=True, blank=True)
     type = models.IntegerField(default=1, choices=[
         (1, 'Admin'),
-        (2, 'Staff'),
+        (2, 'Auditor'),
         (3, 'Accountant'),
         (4, 'Supervisor'),
         (5, 'General Manager'),

@@ -48,7 +48,7 @@ def home_view(request):
     defaulters_count = Loan.objects.filter(status='pending', due_date__lt=date.today()).count()
     recent_loans = Loan.objects.select_related('member').order_by('-date_issued')[:5]
     recent_members = Member.objects.order_by('-date_joined')[:5]
-
+    role=Profile.objects.get(user=request.user).type
     # Loans per month (last 12 months)
     loans_by_month_qs = (
         Loan.objects.annotate(month=TruncMonth('date_issued'))
@@ -72,7 +72,7 @@ def home_view(request):
     months = [(today - relativedelta(months=i)).strftime('%b %Y') for i in reversed(range(12))]
     loans_data = [loans_by_month.get(month, 0) for month in months]
     savings_data = [savings_by_month.get(month, 0) for month in months]
-
+    print(role)
     return render(request, 'index.html', {
         'members_count': members_count,
         'savers_count': savers_count,
@@ -83,13 +83,15 @@ def home_view(request):
         'chart_months': months,
         'chart_loans_data': loans_data,
         'chart_savings_data': savings_data,
+        'role': role
     })
 
 @login_required
 def users_view(request):
+    role=Profile.objects.get(user=request.user).type
     users = User.objects.all()
     profiles = Profile.objects.all()
-    return render(request, 'users.html', {'users': users, 'profiles': profiles})
+    return render(request, 'users.html', {'users': users, 'profiles': profiles, 'role': role})
 
 @login_required
 def manage_user(request, id):
@@ -105,6 +107,7 @@ def manage_user(request, id):
         return redirect('users-url')
     user = User.objects.get(id=id)
     profile = Profile.objects.get(user=user)
+    role=Profile.objects.get(user=request.user).type
     return render(request, 'manage_user.html', {'user': user, 'profile': profile})
 
 @login_required
@@ -131,7 +134,8 @@ def members_list(request):
             'pending_loan': pending_loan,
             'due_date': due_date,
         })
-    return render(request, 'members.html', {'members_data': members_data})
+    role=Profile.objects.get(user=request.user).type
+    return render(request, 'members.html', {'members_data': members_data, 'role': role})
 
 @login_required
 def member_add(request):
@@ -180,7 +184,8 @@ def dashboard(request):
 @login_required
 def member_detail(request, id):
     member = get_object_or_404(Member, id=id)
-    return render(request, 'member_detail.html', {'member': member})
+    role=Profile.objects.get(user=request.user).type
+    return render(request, 'member_detail.html', {'member': member, 'role': role})
 
 # --- Member AJAX Search ---
 @require_GET
@@ -208,7 +213,8 @@ def savings_list(request):
             'total_saved': total,
             'savings': savings
         })
-    return render(request, 'savings.html', {'members_savings': members_savings, 'members': members})
+    role=Profile.objects.get(user=request.user).type
+    return render(request, 'savings.html', {'members_savings': members_savings, 'members': members, 'role': role})
 
 @login_required
 def saving_add(request):
@@ -219,7 +225,7 @@ def saving_add(request):
             return redirect('savings')
     else:
         form = SavingForm()
-    return render(request, 'member_form.html', {'form': form, 'action': 'Add Saving'})
+    return render(request, 'member_form.html', {'form': form, 'action': 'Add Saving','role': role})
 
 @login_required
 def saving_edit(request, id):
@@ -244,9 +250,10 @@ def saving_delete(request, id):
 # Loans Views
 @login_required
 def loans_list(request):
+    role=Profile.objects.get(user=request.user).type
     loans = Loan.objects.select_related('member', 'loan_plan').all()
     loan_plans = LoanPlan.objects.all()
-    return render(request, 'loans.html', {'loans': loans, 'loan_plans': loan_plans})
+    return render(request, 'loans.html', {'loans': loans, 'loan_plans': loan_plans, 'role': role})
 
 @login_required
 def loan_add(request):
@@ -310,6 +317,7 @@ def loan_detail(request, loan_id):
 # Loan Repayment
 @login_required
 def loan_repayment(request, loan_id):
+    role=Profile.objects.get(user=request.user).type
     loan = get_object_or_404(Loan, id=loan_id)
     repayments = LoanRepayment.objects.filter(loan=loan)
     total_repaid = repayments.aggregate(total=models.Sum('amount'))['total'] or 0
@@ -333,7 +341,7 @@ def loan_repayment(request, loan_id):
             return render(request, 'loan_repayment.html', {'form': LoanRepaymentForm(initial={'loan': loan}), 'repayments': LoanRepayment.objects.filter(loan=loan), 'pending': loan.amount - (total_repaid + repay_amount if repay_amount <= pending else pending), 'feedback': feedback})
     else:
         form = LoanRepaymentForm(initial={'loan': loan})
-    return render(request, 'loan_repayment.html', {'form': form, 'repayments': repayments, 'pending': pending, 'feedback': feedback})
+    return render(request, 'loan_repayment.html', {'form': form, 'repayments': repayments, 'pending': pending, 'feedback': feedback,'role': role})
 
 @login_required
 def loan_repayments_list(request, loan_id):
@@ -349,6 +357,7 @@ def loan_repayments_list(request, loan_id):
 # Borrowers Views
 @login_required
 def borrowers_list(request):
+    role=Profile.objects.get(user=request.user).type
     borrowers = Borrower.objects.select_related('member').all()
     # Calculate total savings for each borrower
     borrowers_data = []
@@ -359,7 +368,7 @@ def borrowers_list(request):
             'savings_total': savings_total
         })
     members = Member.objects.exclude(borrower__isnull=False)
-    return render(request, 'borrowers.html', {'borrowers_data': borrowers_data, 'members': members})
+    return render(request, 'borrowers.html', {'borrowers_data': borrowers_data, 'members': members, 'role': role})
 
 @login_required
 def borrower_add(request):
@@ -373,10 +382,12 @@ def borrower_add(request):
 # Loan Plans Views
 @login_required
 def loan_plans_list(request):
+    role=Profile.objects.get(user=request.user).type
     loan_product_types = LoanProductType.objects.all()
     loan_plans = LoanPlan.objects.all().order_by('-date_created')
-    return render(request, 'loan_plans.html', {'loan_plans': loan_plans, 'loan_product_types': loan_product_types})
+    return render(request, 'loan_plans.html', {'loan_plans': loan_plans, 'loan_product_types': loan_product_types, 'role': role})
 
+@login_required
 @login_required
 def loan_plan_add(request):
     if request.method == 'POST':
@@ -397,6 +408,7 @@ def loan_plan_add(request):
 
 @login_required
 def loan_product_type_list(request):
+    role=Profile.objects.get(user=request.user).type
     product_types = LoanProductType.objects.all()
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -404,7 +416,7 @@ def loan_product_type_list(request):
         if name:
             LoanProductType.objects.create(name=name, description=description)
         return redirect('loan-product-type-list')
-    return render(request, 'loan_product_types.html', {'product_types': product_types})
+    return render(request, 'loan_product_types.html', {'product_types': product_types, 'role': role})
 
 @login_required
 @require_POST
@@ -428,6 +440,7 @@ def loan_product_type_delete(request, id):
 # Reports
 @login_required
 def reports(request):
+    role=Profile.objects.get(user=request.user).type
     report_type = request.GET.get('report_type', 'members')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
@@ -466,10 +479,12 @@ def reports(request):
         'date_to': date_to,
         'results': results,
         'now': timezone.now(),
+        'role': role
     })
 
 @login_required
 def repayments_page(request):
+    role=Profile.objects.get(user=request.user).type
     loans = Loan.objects.select_related('member', 'loan_plan')
     query = request.GET.get('q', '').strip()
     status = request.GET.get('status', '')
@@ -485,11 +500,12 @@ def repayments_page(request):
     for loan in loans:
         loan.total_repaid = loan.repayments.aggregate(total=models.Sum('amount'))['total'] or 0
         loan.pending_amount = loan.amount - loan.total_repaid
-    return render(request, 'repayments.html', {'loans': loans, 'q': query, 'status': status})
+    return render(request, 'repayments.html', {'loans': loans, 'q': query, 'status': status, 'role': role})
 
 @login_required
 @require_http_methods(["GET", "POST"])
 def loan_approvals(request):
+    role=Profile.objects.get(user=request.user).type
     if request.method == "POST":
         loan_id = request.POST.get("loan_id")
         action = request.POST.get("action")
@@ -503,7 +519,7 @@ def loan_approvals(request):
         return redirect("loan-approvals")
     # GET: list all pending loans
     loans = Loan.objects.filter(status="pending").select_related("member", "loan_plan")
-    return render(request, "loan_approvals.html", {"loans": loans})
+    return render(request, "loan_approvals.html", {"loans": loans, 'role': role})
 
 def login_view(request):
     error_message = None
