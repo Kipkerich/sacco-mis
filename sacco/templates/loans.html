@@ -83,7 +83,8 @@
           </div>
           <div class="mb-3">
             <label for="amount" class="form-label">Loan Amount</label>
-            <input type="number" class="form-control" id="amount" name="amount" required>
+            <input type="number" class="form-control" id="amount" name="amount" required oninput="validateAmount()" value="0.00">
+            <div id="amount-warning" class="text-danger small mt-1" style="display:none;">Loan amount cannot be more than 500,000</div>
           </div>
           <div class="mb-3">
             <label for="status" class="form-label">Status</label>
@@ -152,7 +153,7 @@
           </div>
           <div class="mb-3">
             <label for="edit-amount" class="form-label">Loan Amount</label>
-            <input type="number" class="form-control" id="edit-amount" name="amount" required>
+            <input type="number" class="form-control" id="edit-amount" name="amount" required onchange="validateAmount()">
           </div>
           <div class="mb-3">
             <label for="edit-status" class="form-label">Status</label>
@@ -183,6 +184,24 @@
 </div>
 
 <script>
+  function validateAmount() {
+    var amountInput = document.getElementById('amount');
+    var warning = document.getElementById('amount-warning');
+    if (amountInput && warning) {
+      if (parseFloat(amountInput.value) > 500000) {
+        warning.style.display = 'block';
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+    // Edit modal validation (existing)
+    var editAmount = document.getElementById('edit-amount');
+    if (editAmount && editAmount.value && editAmount.value > 5000000) {
+      alert('Loan amount cannot be more than 5,000,000');
+      editAmount.value = '';
+    }
+  }
+
 // Populate Edit Loan Modal with loan data
 var editLoanModal = document.getElementById('editLoanModal');
 editLoanModal.addEventListener('show.bs.modal', function (event) {

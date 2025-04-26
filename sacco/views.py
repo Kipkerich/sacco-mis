@@ -312,16 +312,28 @@ def loan_detail(request, loan_id):
 def loan_repayment(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
     repayments = LoanRepayment.objects.filter(loan=loan)
+    total_repaid = repayments.aggregate(total=models.Sum('amount'))['total'] or 0
+    pending = loan.amount - total_repaid
+    feedback = None
     if request.method == 'POST':
         form = LoanRepaymentForm(request.POST)
         if form.is_valid():
             repayment = form.save(commit=False)
             repayment.loan = loan
-            repayment.save()
-            return redirect('loan-repayment', loan_id=loan.id)
+            repay_amount = repayment.amount
+            if repay_amount > pending:
+                repayment.amount = pending
+                repayment.save()
+                excess = repay_amount - pending
+                if excess > 0:
+                    Saving.objects.create(member=loan.member, amount=excess, note=f'Excess loan repayment for Loan #{loan.id}')
+                    feedback = f"Excess repayment of {excess} added to savings."
+            else:
+                repayment.save()
+            return render(request, 'loan_repayment.html', {'form': LoanRepaymentForm(initial={'loan': loan}), 'repayments': LoanRepayment.objects.filter(loan=loan), 'pending': loan.amount - (total_repaid + repay_amount if repay_amount <= pending else pending), 'feedback': feedback})
     else:
         form = LoanRepaymentForm(initial={'loan': loan})
-    return render(request, 'loan_repayment.html', {'form': form, 'repayments': repayments})
+    return render(request, 'loan_repayment.html', {'form': form, 'repayments': repayments, 'pending': pending, 'feedback': feedback})
 
 @login_required
 def loan_repayments_list(request, loan_id):
@@ -469,6 +481,10 @@ def repayments_page(request):
     if status:
         loans = loans.filter(status=status)
     loans = loans.order_by('-date_issued')
+    # Calculate total repayments and pending amount for each loan
+    for loan in loans:
+        loan.total_repaid = loan.repayments.aggregate(total=models.Sum('amount'))['total'] or 0
+        loan.pending_amount = loan.amount - loan.total_repaid
     return render(request, 'repayments.html', {'loans': loans, 'q': query, 'status': status})
 
 @login_required
