@@ -6,9 +6,18 @@ import datetime
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='profile')
     name = models.CharField(max_length=100, default='name', null=True, blank=True)
-    type = models.IntegerField(default=1, choices=[(1, 'Admin'), (2, 'Staff')])
+    type = models.IntegerField(default=1, choices=[
+        (1, 'Admin'),
+        (2, 'Staff'),
+        (3, 'Accountant'),
+        (4, 'Supervisor'),
+        (5, 'General Manager'),
+    ])
     def __str__(self):
         return self.name
+
+    def get_role_display(self):
+        return dict(self._meta.get_field('type').choices).get(self.type, 'Unknown')
 
     class Meta:
         verbose_name = 'Profile'

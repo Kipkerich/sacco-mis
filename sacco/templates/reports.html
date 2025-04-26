@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
+{% load static %}
 <div class="container py-5">
     <div class="row mb-4">
         <div class="col">
@@ -36,8 +37,124 @@
             <hr>
             <div class="mt-4">
                 <h5>Report Results</h5>
-                <!-- Placeholder for report results -->
-                <div class="alert alert-info">Select parameters and generate a report to see results here.</div>
+                {% if results %}
+                <div class="mb-3 text-end">
+                    <button class="btn btn-outline-secondary" onclick="printReport()">
+                        <i class="fa fa-print"></i> Print Report
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="exportPDF()">
+                        <i class="fa fa-file-pdf"></i> Export as PDF
+                    </button>
+                </div>
+                <div id="report-content">
+                    <div class="text-center mb-4">
+                        <img src="{% static 'img/logo.png' %}" alt="Sacco Logo" style="max-height:80px;">
+                        <h3 class="mt-2">Sacco Report</h3>
+                        <div class="text-muted">Generated on {{ now|date:"Y-m-d H:i" }}</div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                {% if report_type == 'members' %}
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Membership No.</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Date Joined</th>
+                                    </tr>
+                                {% elif report_type == 'savings' %}
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Amount</th>
+                                        <th>Date</th>
+                                        <th>Note</th>
+                                    </tr>
+                                {% elif report_type == 'loans' %}
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Loan Plan</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Due Date</th>
+                                        <th>Date Issued</th>
+                                    </tr>
+                                {% elif report_type == 'repayments' %}
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Loan</th>
+                                        <th>Amount</th>
+                                        <th>Date</th>
+                                    </tr>
+                                {% endif %}
+                            </thead>
+                            <tbody>
+                                {% for obj in results %}
+                                    {% if report_type == 'members' %}
+                                        <tr>
+                                            <td>{{ obj.name }}</td>
+                                            <td>{{ obj.membership_number }}</td>
+                                            <td>{{ obj.email }}</td>
+                                            <td>{{ obj.phone }}</td>
+                                            <td>{{ obj.date_joined|date:'Y-m-d' }}</td>
+                                        </tr>
+                                    {% elif report_type == 'savings' %}
+                                        <tr>
+                                            <td>{{ obj.member.name }}</td>
+                                            <td>{{ obj.amount }}</td>
+                                            <td>{{ obj.date }}</td>
+                                            <td>{{ obj.note }}</td>
+                                        </tr>
+                                    {% elif report_type == 'loans' %}
+                                        <tr>
+                                            <td>{{ obj.member.name }}</td>
+                                            <td>{{ obj.loan_plan.name }}</td>
+                                            <td>{{ obj.amount }}</td>
+                                            <td>{{ obj.status }}</td>
+                                            <td>{{ obj.due_date }}</td>
+                                            <td>{{ obj.date_issued }}</td>
+                                        </tr>
+                                    {% elif report_type == 'repayments' %}
+                                        <tr>
+                                            <td>{{ obj.loan.member.name }}</td>
+                                            <td>#{{ obj.loan.id }}</td>
+                                            <td>{{ obj.amount }}</td>
+                                            <td>{{ obj.date }}</td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+                <script>
+                function printReport() {
+                    var printContents = document.getElementById('report-content').innerHTML;
+                    var originalContents = document.body.innerHTML;
+                    document.body.innerHTML = printContents;
+                    window.print();
+                    document.body.innerHTML = originalContents;
+                    location.reload();
+                }
+                function exportPDF() {
+                    var report = document.getElementById('report-content');
+                    html2canvas(report).then(function(canvas) {
+                        var imgData = canvas.toDataURL('image/png');
+                        var pdf = new jspdf.jsPDF('p', 'pt', 'a4');
+                        var pageWidth = pdf.internal.pageSize.getWidth();
+                        var pageHeight = pdf.internal.pageSize.getHeight();
+                        var imgWidth = pageWidth - 40;
+                        var imgHeight = canvas.height * imgWidth / canvas.width;
+                        pdf.addImage(imgData, 'PNG', 20, 20, imgWidth, imgHeight);
+                        pdf.save('sacco_report.pdf');
+                    });
+                }
+                </script>
+                {% else %}
+                    <div class="alert alert-info">Select parameters and generate a report to see results here.</div>
+                {% endif %}
             </div>
         </div>
     </div>

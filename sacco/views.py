@@ -10,17 +10,35 @@ from datetime import date
 from django.db.models.functions import TruncMonth
 from django.db.models import Count
 from dateutil.relativedelta import relativedelta
+from django.contrib.auth import authenticate, login
+from django.db import models
+from django.db.models import Sum
+from django.views.decorators.http import require_http_methods
+from django.utils import timezone
 
 def register_view(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('login-url')
-            #return render(request, 'login.html', {'form': form})
+        from django.contrib.auth.models import User
+        name = request.POST.get('name')
+        type_val = request.POST.get('type')
+        username = request.POST.get('username')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        # Basic validation
+        if not (name and type_val and username and password1 and password2):
+            form_errors = 'All fields are required.'
+            return render(request, 'register.html', {'form_errors': form_errors})
+        if password1 != password2:
+            form_errors = 'Passwords do not match.'
+            return render(request, 'register.html', {'form_errors': form_errors})
+        if User.objects.filter(username=username).exists():
+            form_errors = 'Username already exists.'
+            return render(request, 'register.html', {'form_errors': form_errors})
+        user = User.objects.create_user(username=username, password=password1)
+        profile = Profile.objects.create(user=user, name=name, type=type_val)
+        return redirect('login-url')
     else:
-        form = UserCreationForm()
-    return render(request, 'register.html', {'form': form})
+        return render(request, 'register.html')
 
 @login_required
 def home_view(request):
@@ -100,7 +118,20 @@ def delete_user(request, id):
 @login_required
 def members_list(request):
     members = Member.objects.all()
-    return render(request, 'members.html', {'members': members})
+    members_data = []
+    for member in members:
+        total_saved = member.savings.aggregate(total=models.Sum('amount'))['total'] or 0
+        total_repaid = member.loans.aggregate(total=models.Sum('repayments__amount'))['total'] or 0
+        pending_loan = member.loans.filter(status='pending').aggregate(total=models.Sum('amount'))['total'] or 0
+        due_date = member.loans.filter(status='pending').order_by('due_date').values_list('due_date', flat=True).first()
+        members_data.append({
+            'member': member,
+            'total_saved': total_saved,
+            'amount_repaid': total_repaid,
+            'pending_loan': pending_loan,
+            'due_date': due_date,
+        })
+    return render(request, 'members.html', {'members_data': members_data})
 
 @login_required
 def member_add(request):
@@ -270,6 +301,12 @@ def loan_delete(request, id):
         return redirect('loans')
     return render(request, 'member_confirm_delete.html', {'member': loan})
 
+@login_required
+def loan_detail(request, loan_id):
+    loan = get_object_or_404(Loan, id=loan_id)
+    repayments = loan.repayments.order_by('-date')
+    return render(request, 'loan_detail.html', {'loan': loan, 'repayments': repayments})
+
 # Loan Repayment
 @login_required
 def loan_repayment(request, loan_id):
@@ -286,12 +323,31 @@ def loan_repayment(request, loan_id):
         form = LoanRepaymentForm(initial={'loan': loan})
     return render(request, 'loan_repayment.html', {'form': form, 'repayments': repayments})
 
+@login_required
+def loan_repayments_list(request, loan_id):
+    loan = get_object_or_404(Loan, id=loan_id)
+    repayments = loan.repayments.order_by('-date')
+    if request.method == 'POST':
+        amount = request.POST.get('amount')
+        if amount:
+            LoanRepayment.objects.create(loan=loan, amount=amount)
+            return redirect('loan-repayments-list', loan_id=loan.id)
+    return render(request, 'loan_repayments.html', {'loan': loan, 'repayments': repayments})
+
 # Borrowers Views
 @login_required
 def borrowers_list(request):
     borrowers = Borrower.objects.select_related('member').all()
+    # Calculate total savings for each borrower
+    borrowers_data = []
+    for borrower in borrowers:
+        savings_total = borrower.member.savings.aggregate(total=Sum('amount'))['total'] or 0
+        borrowers_data.append({
+            'borrower': borrower,
+            'savings_total': savings_total
+        })
     members = Member.objects.exclude(borrower__isnull=False)
-    return render(request, 'borrowers.html', {'borrowers': borrowers, 'members': members})
+    return render(request, 'borrowers.html', {'borrowers_data': borrowers_data, 'members': members})
 
 @login_required
 def borrower_add(request):
@@ -357,7 +413,96 @@ def loan_product_type_delete(request, id):
     product_type.delete()
     return redirect('loan-product-type-list')
 
-# Reports (placeholder)
+# Reports
 @login_required
 def reports(request):
-    return render(request, 'reports.html')
+    report_type = request.GET.get('report_type', 'members')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    results = []
+    if report_type == 'members':
+        qs = Member.objects.all()
+        if date_from:
+            qs = qs.filter(date_joined__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_joined__lte=date_to)
+        results = list(qs)
+    elif report_type == 'savings':
+        qs = Saving.objects.select_related('member')
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+        results = list(qs)
+    elif report_type == 'loans':
+        qs = Loan.objects.select_related('member', 'loan_plan')
+        if date_from:
+            qs = qs.filter(date_issued__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_issued__lte=date_to)
+        results = list(qs)
+    elif report_type == 'repayments':
+        qs = LoanRepayment.objects.select_related('loan__member')
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+        results = list(qs)
+    return render(request, 'reports.html', {
+        'report_type': report_type,
+        'date_from': date_from,
+        'date_to': date_to,
+        'results': results,
+        'now': timezone.now(),
+    })
+
+@login_required
+def repayments_page(request):
+    loans = Loan.objects.select_related('member', 'loan_plan')
+    query = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '')
+    if query:
+        loans = loans.filter(
+            models.Q(member__name__icontains=query) |
+            models.Q(member__membership_number__icontains=query)
+        )
+    if status:
+        loans = loans.filter(status=status)
+    loans = loans.order_by('-date_issued')
+    return render(request, 'repayments.html', {'loans': loans, 'q': query, 'status': status})
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def loan_approvals(request):
+    if request.method == "POST":
+        loan_id = request.POST.get("loan_id")
+        action = request.POST.get("action")
+        loan = get_object_or_404(Loan, id=loan_id, status="pending")
+        if action == "approve":
+            loan.status = "approved"
+            loan.save()
+        elif action == "reject":
+            loan.status = "rejected"
+            loan.save()
+        return redirect("loan-approvals")
+    # GET: list all pending loans
+    loans = Loan.objects.filter(status="pending").select_related("member", "loan_plan")
+    return render(request, "loan_approvals.html", {"loans": loans})
+
+def login_view(request):
+    error_message = None
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            try:
+                profile = user.profile
+                request.session['user_type'] = profile.type
+            except Profile.DoesNotExist:
+                request.session['user_type'] = None
+            return redirect('dashboard')
+        else:
+            error_message = 'Invalid username or password.'
+    return render(request, 'login.html', {'error_message': error_message})
