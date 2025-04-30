@@ -48,7 +48,7 @@ def register_view(request):
             return render(request, 'register.html', {'form_errors': form_errors})
         user = User.objects.create_user(username=username, password=password1)
         profile = Profile.objects.create(user=user, name=name, type=type_val)
-        return redirect('login-url')
+        return redirect('users-url')
     else:
         return render(request, 'register.html')
 
