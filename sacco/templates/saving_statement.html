@@ -198,6 +198,7 @@
                 <td>{{ s.amount }}</td>
                 <td>{{ s.running_balance }}</td>
                 <td>{{ s.description }}</td>
+                <td><a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editSavingModal" data-saving-id="{{ saving.id }}" data-member-id="{{ saving.member.id }}" data-amount="{{ saving.amount }}" data-note="{{ saving.note }}" data-date="{{ saving.date|date:'Y-m-d' }}">Edit</a></td>
             </tr>
             {% empty %}
             <tr><td colspan="5">No other transactions.</td></tr>
@@ -205,4 +206,44 @@
         </tbody>
     </table>
 </div>
+<div class="modal fade" id="editSavingModal" tabindex="-1" aria-labelledby="editSavingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="post" id="editSavingForm">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="editSavingModalLabel">Edit Savings</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="edit-member" class="form-label">Member</label>
+              <select class="form-select" id="edit-member" name="member" required>
+                <option value="">-- Select Member --</option>
+                {% for member in members %}
+                  <option value="{{ member.id }}">{{ member.name }} ({{ member.membership_number }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="edit-amount" class="form-label">Amount</label>
+              <input type="number" class="form-control" id="edit-amount" name="amount" step="0.01" required>
+            </div>
+            <div class="mb-3">
+              <label for="edit-date" class="form-label">Date</label>
+              <input type="date" class="form-control" id="edit-date" name="date">
+            </div>
+            <div class="mb-3">
+              <label for="edit-note" class="form-label">Note</label>
+              <input type="text" class="form-control" id="edit-note" name="note">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 {% endblock %}

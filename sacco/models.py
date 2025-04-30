@@ -76,7 +76,7 @@ class Saving(models.Model):
     date = models.DateField(blank=True,null=True)
     receipt_no = models.CharField(max_length=255, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="capital_share")
-    deposit_type = models.CharField(max_length=20, choices=DEPOSIT_TYPE_CHOICES, blank=True, null=True)
+    deposit_type = models.CharField(max_length=20, choices=DEPOSIT_TYPE_CHOICES, default="other")
 
     def __str__(self):
         return f"{self.member.name} - {self.amount} on {self.date} ({self.get_category_display()})"
@@ -210,7 +210,7 @@ class SavingStatement(models.Model):
     running_balance = models.DecimalField(max_digits=12, decimal_places=2)
     description = models.CharField(max_length=255, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="capital_share")
-    deposit_type = models.CharField(max_length=20, choices=DEPOSIT_TYPE_CHOICES, blank=True, null=True)
+    deposit_type = models.CharField(max_length=20, choices=DEPOSIT_TYPE_CHOICES,default="other")
 
     def __str__(self):
         return f"{self.member.name} | {self.amount} on {self.date.date()}"
