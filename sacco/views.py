@@ -182,11 +182,13 @@ def member_delete(request, id):
 
 @login_required
 def member_toggle_status(request, id):
+    
     member = get_object_or_404(Member, id=id)
     if request.method == 'POST':
         member.status = not member.status
         member.save()
-    return redirect('member_detail', id=member.id)
+   
+    return redirect('member_detail', id=member.id )
 
 # Dashboard
 @login_required
@@ -203,8 +205,9 @@ def dashboard(request):
 # Member Detail
 @login_required
 def member_detail(request, id):
+    role=Profile.objects.get(user=request.user).type
     member = get_object_or_404(Member, id=id)
-    return render(request, 'member_detail.html', {'member': member})
+    return render(request, 'member_detail.html', {'member': member, 'role': role})
 
 # --- Member AJAX Search ---
 @require_GET
@@ -429,6 +432,7 @@ def loan_delete(request, id):
 
 @login_required
 def loan_detail(request, loan_id):
+    role=Profile.objects.get(user=request.user).type
     loan = get_object_or_404(Loan, id=loan_id)
     repayments = loan.repayments.all()
     # Filtering
@@ -445,7 +449,7 @@ def loan_detail(request, loan_id):
     if max_amount:
         repayments = repayments.filter(amount__lte=max_amount)
     repayments = repayments.order_by('-date')
-    return render(request, 'loan_detail.html', {'loan': loan, 'repayments': repayments, 'start_date': start_date, 'end_date': end_date, 'min_amount': min_amount, 'max_amount': max_amount})
+    return render(request, 'loan_detail.html', {'loan': loan, 'repayments': repayments, 'start_date': start_date, 'end_date': end_date, 'min_amount': min_amount, 'max_amount': max_amount, 'role': role})
 
 import csv
 from django.http import HttpResponse
@@ -507,6 +511,7 @@ def loan_repayment(request, loan_id):
 
 @login_required
 def loan_repayments_list(request, loan_id):
+    role=Profile.objects.get(user=request.user).type
     loan = get_object_or_404(Loan, id=loan_id)
     repayments = loan.repayments.order_by('-date')
     if request.method == 'POST':
@@ -515,7 +520,7 @@ def loan_repayments_list(request, loan_id):
         if amount:
             LoanRepayment.objects.create(loan=loan, amount=amount,date=date)
             return redirect('loan-repayments-list', loan_id=loan.id)
-    return render(request, 'loan_repayments.html', {'loan': loan, 'repayments': repayments})
+    return render(request, 'loan_repayments.html', {'loan': loan, 'repayments': repayments, 'role': role})
 
 @login_required
 def loan_repayments_pdf(request, loan_id):
@@ -548,6 +553,7 @@ def borrowers_list(request):
 
 @login_required
 def borrower_add(request):
+    role=Profile.objects.get(user=request.user).type
     if request.method == 'POST':
         form = BorrowerForm(request.POST)
         if form.is_valid():
@@ -555,7 +561,7 @@ def borrower_add(request):
             return redirect('borrowers-url')
     else:
         form = BorrowerForm()
-    return render(request, 'borrower_form.html', {'form': form})
+    return render(request, 'borrower_form.html', {'form': form, 'role': role})
 
 # Loan Plans Views
 @login_required
@@ -872,9 +878,10 @@ def general_statement_pdf(request, member_id):
 
 @login_required
 def loan_schedule_view(request, loan_id):
+    role=Profile.objects.get(user=request.user).type
     loan = get_object_or_404(Loan, id=loan_id)
     schedule = loan.repayment_schedule.order_by('month')
-    return render(request, 'loan_schedule_view.html', {'loan': loan, 'schedule': schedule})
+    return render(request, 'loan_schedule_view.html', {'loan': loan, 'schedule': schedule, 'role': role})
 
 @login_required
 def loan_schedule_view_pdf(request, loan_id):
@@ -1102,8 +1109,9 @@ def add_source_of_income(request):
 
 @login_required
 def settings_page(request):
+    role=Profile.objects.get(user=request.user).type
     sources = SourceOfIncome.objects.all().order_by('name')
-    return render(request, 'settings.html', {'sources': sources})
+    return render(request, 'settings.html', {'sources': sources, 'role': role})
 
 @csrf_exempt
 @login_required
