@@ -33,14 +33,15 @@
                             <tr>
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ data.member.membership_number }}</td>
-                                <td>{{ data.member.name }}</td>
+                                <td><a href="{% url 'general-statement' data.member.id %}">{{ data.member.name }}</a></td>
                                 <td>{{ data.pending_loan|floatformat:2 }}</td>
                                 <td>{{ data.total_saved|floatformat:2 }}</td>
                                 <td>{{ data.amount_repaid|floatformat:2 }}</td>
                                 <td>{% if data.due_date %}{{ data.due_date|date:'Y-m-d' }}{% else %}-{% endif %}</td>
                                 <td>{% if data.member.type == 1 %}Junior{% else %}Normal{% endif %}</td>
                                 <td>
-                                    <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editMemberModal"
+                                    <a href="{% url 'member_detail' data.member.id %}" class="btn btn-info btn-sm ms-1">Profile</a>
+                                    <a href="#" class="btn btn-primary btn-sm ms-1" data-bs-toggle="modal" data-bs-target="#editMemberModal"
                                         data-id="{{ data.member.id }}"
                                         data-type="{{ data.member.type }}"
                                         data-name="{{ data.member.name }}"
@@ -48,11 +49,9 @@
                                         data-membership_number="{{ data.member.membership_number }}"
                                         data-email="{{ data.member.email }}"
                                         data-phone="{{ data.member.phone }}"
-                                        data-address="{{ data.member.address }}"
-                                        data-status="{{ data.member.status }}">
-                                        Edit
-                                    </a>
-                                    <a href="{% url 'member-delete' data.member.id %}" class="btn btn-danger btn-sm">Delete</a>
+                                        >Edit</a>
+                                    <a href="{% url 'next-of-kin-manage' data.member.id %}" class="btn btn-warning btn-sm ms-1">Next of Kin</a>
+                                    <a href="{% url 'member-delete' data.member.id %}" class="btn btn-danger btn-sm ms-1">Delete</a>
                                 </td>
                             </tr>
                             {% empty %}

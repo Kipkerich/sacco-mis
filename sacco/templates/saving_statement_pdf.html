@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .statement-header { text-align: center; margin-bottom: 20px; }
+        .statement-logo { width: 100px; height: auto; margin-bottom: 10px; }
+        .statement-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .statement-table th, .statement-table td { border: 1px solid #333; padding: 6px 10px; text-align: right; }
+        .statement-table th { background: #f0f0f0; text-align: center; }
+        .statement-meta { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+<div class="statement-header">
+    <img src="/static/logo.png" class="statement-logo" alt="Logo">
+    <h3>DEMO SACCO SOCIETY LTD</h3>
+    <div>P.O BOX 280-00511, Ongata Rongai.</div>
+    <div>Email: demosacco@yahoo.com | Tel: 0712345678/967467</div>
+    <h4>MEMBER STATEMENT</h4>
+    <div class="statement-meta">
+        <b>Member No:</b> {{ member.member_number }}<br>
+        <b>Name:</b> {{ member.name }}<br>
+        <b>Statement as at:</b> {{ now|date:'d/m/Y' }}
+    </div>
+</div>
+<h5 style="text-align:left; margin-top:30px;">Capital Share</h5>
+<table class="statement-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Opening Balance</th>
+            <th>Amount</th>
+            <th>Running Balance</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in capital_share_statements %}
+        <tr>
+            <td>{{ s.date|date:'d/m/Y' }}</td>
+            <td>{{ s.opening_balance }}</td>
+            <td>{{ s.amount }}</td>
+            <td>{{ s.running_balance }}</td>
+            <td>{{ s.description }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No capital share transactions.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h5 style="text-align:left; margin-top:30px;">Member Deposit: School Fees</h5>
+<table class="statement-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Opening Balance</th>
+            <th>Amount</th>
+            <th>Running Balance</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in member_deposit_school_fees %}
+        <tr>
+            <td>{{ s.date|date:'d/m/Y' }}</td>
+            <td>{{ s.opening_balance }}</td>
+            <td>{{ s.amount }}</td>
+            <td>{{ s.running_balance }}</td>
+            <td>{{ s.description }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No school fees transactions.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h5 style="text-align:left; margin-top:30px;">Member Deposit: Vacation</h5>
+<table class="statement-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Opening Balance</th>
+            <th>Amount</th>
+            <th>Running Balance</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in member_deposit_vacation %}
+        <tr>
+            <td>{{ s.date|date:'d/m/Y' }}</td>
+            <td>{{ s.opening_balance }}</td>
+            <td>{{ s.amount }}</td>
+            <td>{{ s.running_balance }}</td>
+            <td>{{ s.description }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No vacation transactions.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h5 style="text-align:left; margin-top:30px;">Member Deposit: Other</h5>
+<table class="statement-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Opening Balance</th>
+            <th>Amount</th>
+            <th>Running Balance</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in member_deposit_other %}
+        <tr>
+            <td>{{ s.date|date:'d/m/Y' }}</td>
+            <td>{{ s.opening_balance }}</td>
+            <td>{{ s.amount }}</td>
+            <td>{{ s.running_balance }}</td>
+            <td>{{ s.description }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No other transactions.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

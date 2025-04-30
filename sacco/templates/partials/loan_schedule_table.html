@@ -1,0 +1,27 @@
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+{% if schedule and not error %}
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>Month</th>
+            <th>Principal</th>
+            <th>Interest</th>
+            <th>Total Payment</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in schedule %}
+        <tr>
+            <td>{{ row.month }}</td>
+            <td>{{ row.principal }}</td>
+            <td>{{ row.interest }}</td>
+            <td>{{ row.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% elif not error %}
+<div class="text-muted">No schedule generated.</div>
+{% endif %}

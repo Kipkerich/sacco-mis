@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Borrower</h2>
+    <form method="post" id="borrower-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            {{ form.member.label_tag }}
+            {{ form.member }}
+            {{ form.member.errors }}
+        </div>
+        <div class="mb-3">
+            {{ form.employment_status.label_tag }}
+            {{ form.employment_status }}
+            {{ form.employment_status.errors }}
+        </div>
+        <div id="employer-fields" style="display: none;">
+            <div class="mb-3">
+                {{ form.employer_name.label_tag }}
+                {{ form.employer_name }}
+                {{ form.employer_name.errors }}
+            </div>
+            <div class="mb-3">
+                {{ form.employer_address.label_tag }}
+                {{ form.employer_address }}
+                {{ form.employer_address.errors }}
+            </div>
+            <div class="mb-3">
+                {{ form.employer_phone.label_tag }}
+                {{ form.employer_phone }}
+                {{ form.employer_phone.errors }}
+            </div>
+        </div>
+        <div id="business-fields" style="display: none;">
+            <div class="mb-3">
+                {{ form.business_name.label_tag }}
+                {{ form.business_name }}
+                {{ form.business_name.errors }}
+            </div>
+            <div class="mb-3">
+                {{ form.business_type.label_tag }}
+                {{ form.business_type }}
+                {{ form.business_type.errors }}
+            </div>
+            <div class="mb-3">
+                {{ form.business_location.label_tag }}
+                {{ form.business_location }}
+                {{ form.business_location.errors }}
+            </div>
+        </div>
+        <div class="mb-3">
+            {{ form.guarantors.label_tag }}
+            {{ form.guarantors }}
+            {{ form.guarantors.errors }}
+        </div>
+        <div class="mb-3">
+            {{ form.sources_of_income.label_tag }}
+            {{ form.sources_of_income }}
+            {{ form.sources_of_income.errors }}
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+<script>
+function toggleFields() {
+    var status = document.getElementById('id_employment_status').value;
+    document.getElementById('employer-fields').style.display = (status === 'employed') ? 'block' : 'none';
+    document.getElementById('business-fields').style.display = (status === 'self_employed') ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var employmentField = document.getElementById('id_employment_status');
+    if (employmentField) {
+        employmentField.addEventListener('change', toggleFields);
+        toggleFields();
+    }
+});
+</script>
+{% endblock %}

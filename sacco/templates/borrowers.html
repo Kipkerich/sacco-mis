@@ -25,6 +25,7 @@
                                     <th>Phone</th>
                                     <th>Savings</th>
                                     <th>Date Added</th>
+                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -37,9 +38,14 @@
                                     <td>{{ data.borrower.member.phone }}</td>
                                     <td>{{ data.savings_total|floatformat:2 }}</td>
                                     <td>{{ data.borrower.date_added|date:'Y-m-d H:i' }}</td>
+                                    <td class="text-center">
+                                        <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addBorrowerModal">
+                                            <i class="bi bi-person-plus"></i> Add Borrower
+                                        </a>
+                                    </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="7" class="text-center">No borrowers found.</td></tr>
+                                <tr><td colspan="8" class="text-center">No borrowers found.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -54,22 +60,88 @@
 <div class="modal fade" id="addBorrowerModal" tabindex="-1" aria-labelledby="addBorrowerModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post" action="{% url 'borrower-add-url' %}">
+      <form method="post" action="{% url 'borrower-add-url' %}" id="borrower-form-modal">
         {% csrf_token %}
         <div class="modal-header">
           <h5 class="modal-title" id="addBorrowerModalLabel">Add Borrower</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3">
-            <label for="member" class="form-label">Select Member</label>
-            <select class="form-select" id="member" name="member" required>
-              <option value="">-- Select Member --</option>
-              {% for member in members %}
-                <option value="{{ member.id }}">{{ member.name }} ({{ member.membership_number }})</option>
-              {% endfor %}
-            </select>
-          </div>
+          {% if form %}
+            {{ form.non_field_errors }}
+            <div class="mb-3">
+                {{ form.member.label_tag }}
+                {{ form.member }}
+                {{ form.member.errors }}
+            </div>
+            <div class="mb-3">
+                {{ form.employment_status.label_tag }}
+                {{ form.employment_status }}
+                {{ form.employment_status.errors }}
+            </div>
+            <hr class="my-2">
+            <h6 class="fw-bold">Employment Details</h6>
+            <div id="employer-fields-modal" style="display: none;">
+                <div class="mb-3">
+                    {{ form.employer_name.label_tag }}
+                    {{ form.employer_name }}
+                    {{ form.employer_name.errors }}
+                </div>
+                <div class="mb-3">
+                    {{ form.employer_address.label_tag }}
+                    {{ form.employer_address }}
+                    {{ form.employer_address.errors }}
+                </div>
+                <div class="mb-3">
+                    {{ form.employer_phone.label_tag }}
+                    {{ form.employer_phone }}
+                    {{ form.employer_phone.errors }}
+                </div>
+            </div>
+            <div id="business-fields-modal" style="display: none;">
+                <div class="mb-3">
+                    {{ form.business_name.label_tag }}
+                    {{ form.business_name }}
+                    {{ form.business_name.errors }}
+                </div>
+                <div class="mb-3">
+                    {{ form.business_type.label_tag }}
+                    {{ form.business_type }}
+                    {{ form.business_type.errors }}
+                </div>
+                <div class="mb-3">
+                    {{ form.business_location.label_tag }}
+                    {{ form.business_location }}
+                    {{ form.business_location.errors }}
+                </div>
+            </div>
+            <hr class="my-2">
+            <h6 class="fw-bold">Guarantors</h6>
+            <div class="mb-3">
+                {{ form.guarantors.label_tag }}
+                {{ form.guarantors }}
+                <small class="form-text text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple guarantors.</small>
+                {{ form.guarantors.errors }}
+            </div>
+            <hr class="my-2">
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        {{ form.sources_of_income.label_tag }}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="add-income-btn" tabindex="-1">
+                        <i class="bi bi-plus-circle"></i> Add Source
+                    </button>
+                </div>
+                {{ form.sources_of_income }}
+                <div class="input-group mt-2" id="add-income-group" style="display:none;">
+                  <input type="text" class="form-control" id="new-income-name" placeholder="Enter new source of income">
+                  <button class="btn btn-success" type="button" id="save-income-btn">Save</button>
+                  <button class="btn btn-secondary" type="button" id="cancel-income-btn">Cancel</button>
+                </div>
+                {{ form.sources_of_income.errors }}
+            </div>
+          {% endif %}
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -79,4 +151,68 @@
     </div>
   </div>
 </div>
+<script>
+function toggleFieldsModal() {
+    var status = document.getElementById('id_employment_status');
+    if (!status) return;
+    var value = status.value;
+    document.getElementById('employer-fields-modal').style.display = (value === 'employed') ? 'block' : 'none';
+    document.getElementById('business-fields-modal').style.display = (value === 'self_employed') ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var employmentField = document.getElementById('id_employment_status');
+    if (employmentField) {
+        employmentField.addEventListener('change', toggleFieldsModal);
+        toggleFieldsModal();
+    }
+    // Source of income add logic
+    var addBtn = document.getElementById('add-income-btn');
+    var group = document.getElementById('add-income-group');
+    var saveBtn = document.getElementById('save-income-btn');
+    var cancelBtn = document.getElementById('cancel-income-btn');
+    var input = document.getElementById('new-income-name');
+    var select = document.getElementById('id_sources_of_income');
+    if (addBtn && group && saveBtn && cancelBtn && input && select) {
+        addBtn.addEventListener('click', function() {
+            group.style.display = 'flex';
+            input.value = '';
+            input.focus();
+        });
+        cancelBtn.addEventListener('click', function() {
+            group.style.display = 'none';
+            input.value = '';
+        });
+        saveBtn.addEventListener('click', function() {
+            var name = input.value.trim();
+            if (!name) return;
+            saveBtn.disabled = true;
+            fetch("{% url 'add-source-of-income' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'name=' + encodeURIComponent(name)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    var option = document.createElement('option');
+                    option.value = data.id;
+                    option.text = data.name;
+                    option.selected = true;
+                    select.appendChild(option);
+                    group.style.display = 'none';
+                    input.value = '';
+                } else {
+                    alert(data.error || 'Could not add source.');
+                }
+            })
+            .catch(() => alert('Could not add source.'))
+            .finally(() => { saveBtn.disabled = false; });
+        });
+    }
+});
+</script>
 {% endblock %}

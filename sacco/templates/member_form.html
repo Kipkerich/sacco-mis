@@ -12,6 +12,20 @@
                 <div class="card-body">
                     <form method="post" autocomplete="off">
                         {% csrf_token %}
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                         {{ form.non_field_errors }}
                         <div class="mb-3">
                             <label for="id_name" class="form-label">Member's Name</label>
@@ -46,6 +60,32 @@
                             <label for="id_status" class="form-label">Status</label>
                             {{ form.status }}
                         </div>
+                        <div class="mb-3">
+                            <label for="id_national_id" class="form-label">National ID</label>
+                            {{ form.national_id }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_marital_status" class="form-label">Marital Status</label>
+                            {{ form.marital_status }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_fellowship" class="form-label">Fellowship</label>
+                            {{ form.fellowship }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_employment_status" class="form-label">Employment Status</label>
+                            {{ form.employment_status }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_similar_sacco" class="form-label">Belong to Similar SACCO?</label>
+                            {{ form.similar_sacco }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_terms_of_service" class="form-label">Terms of Service</label>
+                            {{ form.terms_of_service }}
+                        </div>
+                        <hr>
+                        <!-- Next of Kin fields removed: now managed separately -->
                         <div class="d-flex justify-content-between">
                             <button type="submit" class="btn btn-primary px-4">Save</button>
                             <a href="{% url 'members-list' %}" class="btn btn-outline-secondary px-4">Cancel</a>

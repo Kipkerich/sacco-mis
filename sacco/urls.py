@@ -2,7 +2,8 @@ from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.views import LogoutView
-
+from django.conf import settings
+from django.conf.urls.static import static
 urlpatterns = [
     path('', views.home_view, name='home-url'),
     path('users/', views.users_view, name='users-url'),
@@ -20,6 +21,8 @@ urlpatterns = [
     path('members/<int:id>/delete/', views.member_delete, name='member-delete'),
     path('dashboard/', views.home_view, name='dashboard'),
     path('members/<int:id>/', views.member_detail, name='member-detail'),
+    path('members/<int:id>/profile/', views.member_detail, name='member_detail'),
+    path('members/<int:id>/toggle-status/', views.member_toggle_status, name='member_toggle_status'),
     path('members/search/', views.member_search_by_ref_number, name='member-search-by-ref'),
 
     # Savings
@@ -34,15 +37,22 @@ urlpatterns = [
     path('loans/<int:loan_id>/edit/', views.loan_edit, name='loan-edit'),
     path('loans/<int:loan_id>/delete/', views.loan_delete, name='loan-delete'),
     path('loans/<int:loan_id>/', views.loan_detail, name='loan-detail'),
+    path('loans/<int:loan_id>/schedule/', views.loan_schedule_view, name='loan-schedule-view'),
+    path('loans/<int:loan_id>/schedule/pdf/', views.loan_schedule_view_pdf, name='loan-schedule-view-pdf'),
+    path('loans/<int:loan_id>/download-repayments/', views.download_repayments_csv, name='download_repayments_csv'),
 
     # Loan Repayment
     path('loans/<int:loan_id>/repay/', views.loan_repayment, name='loan-repayment'),
     path('loans/<int:loan_id>/repayments/', views.loan_repayments_list, name='loan-repayments-list'),
+    path('loans/<int:loan_id>/repayments/pdf/', views.loan_repayments_pdf, name='loan-repayments-pdf'),
     path('repayments/', views.repayments_page, name='repayments-page'),
 
     # Borrowers
     path('borrowers/', views.borrowers_list, name='borrowers-url'),
     path('borrowers/add/', views.borrower_add, name='borrower-add-url'),
+    path('sources-of-income/add/', views.add_source_of_income, name='add-source-of-income'),
+    path('sources-of-income/update/', views.update_source_of_income, name='update-source-of-income'),
+    path('sources-of-income/delete/', views.delete_source_of_income, name='delete-source-of-income'),
 
     # Loan Product Types
     path('loan-product-types/', views.loan_product_type_list, name='loan-product-type-list'),
@@ -54,4 +64,15 @@ urlpatterns = [
 
     # Reports
     path('reports/', views.reports, name='reports'),
+    path("statement/<int:member_id>",views.generate_statement,name='statement-url'),
+    path("statement/<int:member_id>/pdf", views.statement_pdf, name="statement-pdf"),
+    path("general-statement/<int:member_id>", views.general_statement, name="general-statement"),
+    path("general-statement/<int:member_id>/pdf", views.general_statement_pdf, name="general-statement-pdf"),
+    path('loan-schedule/', views.loan_schedule, name='loan-schedule'),
+    path('loan-schedule-pdf/', views.loan_schedule_pdf, name='loan-schedule-pdf'),
+    path('upload-sql/', views.upload_sql_view, name='upload-sql'),
+    path('members/<int:member_id>/next-of-kin/', views.next_of_kin_manage, name='next-of-kin-manage'),
+    path('settings/', views.settings_page, name='settings-page'),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

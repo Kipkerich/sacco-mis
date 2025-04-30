@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: #f8f9fa;
+        margin: 0;
+        padding: 0;
+    }
+    .statement-container {
+        max-width: 950px;
+        margin: 40px auto 40px auto;
+        padding: 32px 24px 40px 24px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .statement-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .statement-logo {
+        width: 100px;
+        height: auto;
+        margin-bottom: 10px;
+    }
+    .statement-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 35px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .statement-table th, .statement-table td {
+        border-bottom: 1px solid #e0e0e0;
+        padding: 10px 14px;
+        text-align: right;
+    }
+    .statement-table th {
+        background: #007bff;
+        color: #fff;
+        text-align: center;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .statement-table tr:nth-child(even) {
+        background: #f6f8fa;
+    }
+    .statement-table tr:hover {
+        background: #e9f5ff;
+    }
+    .statement-section-title {
+        font-weight: bold;
+        text-align: left;
+        padding-top: 25px;
+        padding-bottom: 10px;
+        font-size: 1.2rem;
+        color: #007bff;
+        letter-spacing: 0.5px;
+    }
+    .statement-meta {
+        margin-bottom: 10px;
+        font-size: 1rem;
+        color: #444;
+    }
+    .download-btn {
+        float: right;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 600px) {
+        .statement-container {
+            padding: 10px 2px 20px 2px;
+        }
+        .statement-table th, .statement-table td {
+            font-size: 0.92rem;
+            padding: 7px 6px;
+        }
+        .statement-section-title {
+            font-size: 1rem;
+        }
+    }
+</style>
+<div class="statement-container">
+    <div class="statement-header">
+        <img src="/static/logo.png" class="statement-logo" alt="Logo">
+        <h3>DEMO SACCO SOCIETY LTD</h3>
+        <div>P.O BOX 280-00511, Ongata Rongai.</div>
+        <div>Email: demosacco@yahoo.com | Tel: 0712345678/967467</div>
+        <h4>MEMBER STATEMENT</h4>
+        <div class="statement-meta">
+            <b>Member No:</b> {{ member.membership_number }}<br>
+            <b>Name:</b> {{ member.name }}<br>
+            <b>Statement as at:</b> {{ now|date:'d/m/Y' }}
+        </div>
+        <form method="get" class="form-inline" style="display:inline-block;">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control mx-2">
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control mx-2">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+        <a href="{% url 'statement-pdf' member.id %}?start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-success download-btn">Download Statement (PDF)</a>
+    </div>
+    <h5 class="statement-section-title">Capital Share</h5>
+    <table class="statement-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Opening Balance</th>
+                <th>Amount</th>
+                <th>Running Balance</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in capital_share_statements %}
+            <tr>
+                <td>{{ s.date|date:'d/m/Y' }}</td>
+                <td>{{ s.opening_balance }}</td>
+                <td>{{ s.amount }}</td>
+                <td>{{ s.running_balance }}</td>
+                <td>{{ s.description }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No capital share transactions.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h5 class="statement-section-title">Member Deposit: School Fees</h5>
+    <table class="statement-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Opening Balance</th>
+                <th>Amount</th>
+                <th>Running Balance</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in member_deposit_school_fees %}
+            <tr>
+                <td>{{ s.date|date:'d/m/Y' }}</td>
+                <td>{{ s.opening_balance }}</td>
+                <td>{{ s.amount }}</td>
+                <td>{{ s.running_balance }}</td>
+                <td>{{ s.description }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No school fees transactions.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h5 class="statement-section-title">Member Deposit: Vacation</h5>
+    <table class="statement-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Opening Balance</th>
+                <th>Amount</th>
+                <th>Running Balance</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in member_deposit_vacation %}
+            <tr>
+                <td>{{ s.date|date:'d/m/Y' }}</td>
+                <td>{{ s.opening_balance }}</td>
+                <td>{{ s.amount }}</td>
+                <td>{{ s.running_balance }}</td>
+                <td>{{ s.description }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No vacation transactions.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h5 class="statement-section-title">Member Deposit: Other</h5>
+    <table class="statement-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Opening Balance</th>
+                <th>Amount</th>
+                <th>Running Balance</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in member_deposit_other %}
+            <tr>
+                <td>{{ s.date|date:'d/m/Y' }}</td>
+                <td>{{ s.opening_balance }}</td>
+                <td>{{ s.amount }}</td>
+                <td>{{ s.running_balance }}</td>
+                <td>{{ s.description }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No other transactions.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

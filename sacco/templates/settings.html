@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4">System Settings</h2>
+  <ul class="nav nav-tabs mb-3" id="settingsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="income-tab" data-bs-toggle="tab" data-bs-target="#income" type="button" role="tab">Sources of Income</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab">Other Settings</button>
+    </li>
+  </ul>
+  <div class="tab-content" id="settingsTabsContent">
+    <div class="tab-pane fade show active" id="income" role="tabpanel">
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Manage Sources of Income</span>
+          <button class="btn btn-sm btn-success" id="addIncomeBtn"><i class="bi bi-plus-circle"></i> Add Source</button>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-bordered mb-0" id="incomeTable">
+            <thead class="table-light">
+              <tr><th>Name</th><th style="width:140px;">Actions</th></tr>
+            </thead>
+            <tbody>
+              {% for source in sources %}
+              <tr data-id="{{ source.id }}">
+                <td class="source-name">{{ source.name }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary edit-income-btn"><i class="bi bi-pencil"></i> Edit</button>
+                  <button class="btn btn-sm btn-outline-danger delete-income-btn"><i class="bi bi-trash"></i> Delete</button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="2" class="text-center">No sources found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal fade" id="incomeModal" tabindex="-1" aria-labelledby="incomeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="incomeModalLabel">Add/Edit Source of Income</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="incomeId">
+              <div class="mb-3">
+                <label for="incomeName" class="form-label">Source Name</label>
+                <input type="text" class="form-control" id="incomeName" placeholder="Enter source name">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-success" id="saveIncomeBtn">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane fade" id="other" role="tabpanel">
+      <div class="alert alert-info">Other system settings will appear here.</div>
+    </div>
+  </div>
+</div>
+<script>
+const incomeModal = new bootstrap.Modal(document.getElementById('incomeModal'));
+const incomeTable = document.getElementById('incomeTable');
+const addBtn = document.getElementById('addIncomeBtn');
+const saveBtn = document.getElementById('saveIncomeBtn');
+const nameInput = document.getElementById('incomeName');
+const idInput = document.getElementById('incomeId');
+
+addBtn.addEventListener('click', function() {
+  idInput.value = '';
+  nameInput.value = '';
+  incomeModal.show();
+});
+
+saveBtn.addEventListener('click', function() {
+  const id = idInput.value;
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  saveBtn.disabled = true;
+  let url = id ? '{% url "update-source-of-income" %}' : '{% url "add-source-of-income" %}';
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: id ? `id=${id}&name=${encodeURIComponent(name)}` : `name=${encodeURIComponent(name)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.id) {
+      if (id) {
+        // Update row
+        const row = incomeTable.querySelector(`tr[data-id='${id}']`);
+        if (row) row.querySelector('.source-name').textContent = data.name;
+      } else {
+        // Add new row
+        const row = document.createElement('tr');
+        row.setAttribute('data-id', data.id);
+        row.innerHTML = `<td class='source-name'>${data.name}</td><td><button class='btn btn-sm btn-outline-primary edit-income-btn'><i class='bi bi-pencil'></i> Edit</button> <button class='btn btn-sm btn-outline-danger delete-income-btn'><i class='bi bi-trash'></i> Delete</button></td>`;
+        incomeTable.querySelector('tbody').appendChild(row);
+      }
+      incomeModal.hide();
+    } else {
+      alert(data.error || 'Could not save.');
+    }
+  })
+  .catch(() => alert('Could not save.'))
+  .finally(() => { saveBtn.disabled = false; });
+});
+
+incomeTable.addEventListener('click', function(e) {
+  if (e.target.closest('.edit-income-btn')) {
+    const row = e.target.closest('tr');
+    idInput.value = row.getAttribute('data-id');
+    nameInput.value = row.querySelector('.source-name').textContent;
+    incomeModal.show();
+  } else if (e.target.closest('.delete-income-btn')) {
+    if (!confirm('Delete this source?')) return;
+    const row = e.target.closest('tr');
+    const id = row.getAttribute('data-id');
+    fetch('{% url "delete-source-of-income" %}', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `id=${id}`
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.deleted) {
+        row.remove();
+      } else {
+        alert(data.error || 'Could not delete.');
+      }
+    })
+    .catch(() => alert('Could not delete.'));
+  }
+});
+</script>
+{% endblock %}

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container py-5">
+    <button class="btn btn-success mb-3" onclick="window.location.href='{% url 'loan-repayments-pdf' loan.id %}'">Export to PDF</button>
     <div class="row mb-4">
         <div class="col">
             <h2 class="fw-bold">Repayments for Loan #{{ loan.id }} ({{ loan.member.name }})</h2>
@@ -53,6 +54,10 @@
             <label for="repayment_amount" class="form-label">Amount</label>
             <input type="number" class="form-control" id="repayment_amount" name="amount" min="0" step="0.01" required>
           </div>
+          <div class="mb-3">
+            <label for="repayment_date" class="form-label"> Date</label>
+            <input type="date" class="form-control" id="repayment_date" name="date">
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -62,4 +67,14 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+document.getElementById('exportPDF').addEventListener('click', function () {
+    var element = document.body; // Export the whole page. Change to a specific div if needed.
+    html2pdf().from(element).save('loan_repayments.pdf');
+});
+</script>
 {% endblock %}

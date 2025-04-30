@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .statement-header { text-align: center; margin-bottom: 20px; }
+        .statement-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .statement-table th, .statement-table td { border: 1px solid #333; padding: 6px 10px; text-align: right; }
+        .statement-table th { background: #f0f0f0; text-align: center; }
+        .statement-meta { margin-bottom: 10px; }
+        h4 { margin-top: 30px; }
+    </style>
+</head>
+<body>
+<div class="statement-header">
+    <h2>General Statement</h2>
+    <h5>{{ member.name }} ({{ member.membership_number }})</h5>
+    {% if start_date or end_date %}
+    <div><b>Period:</b> {{ start_date }} - {{ end_date }}</div>
+    {% endif %}
+</div>
+{% if show_savings %}
+<h4>Savings</h4>
+<table class="statement-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Opening Balance</th>
+            <th>Running Balance</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in savings %}
+        <tr>
+            <td>{{ s.date|date:'d/m/Y' }}</td>
+            <td>{{ s.amount }}</td>
+            <td>{{ s.opening_balance }}</td>
+            <td>{{ s.running_balance }}</td>
+            <td>{{ s.description }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No savings records.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% if show_loans %}
+<h4>Loans</h4>
+<table class="statement-table">
+    <thead>
+        <tr>
+            <th>Date Issued</th>
+            <th>Product</th>
+            <th>Amount</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for l in loans %}
+        <tr>
+            <td>{{ l.date_issued|date:'d/m/Y' }}</td>
+            <td>{{ l.loan_plan.name }}</td>
+            <td>{{ l.amount }}</td>
+            <td>{{ l.status }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No loans found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% if show_repayments %}
+<h4>Repayments</h4>
+<table class="statement-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Loan</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in repayments %}
+        <tr>
+            <td>{{ r.date|date:'d/m/Y' }}</td>
+            <td>{{ r.loan.loan_plan.name }} ({{ r.loan.amount }})</td>
+            <td>{{ r.amount }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">No repayments found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+</body>
+</html>

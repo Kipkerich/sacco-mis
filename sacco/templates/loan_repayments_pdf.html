@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Loan Repayments PDF</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #888; padding: 6px; text-align: center; }
+        th { background: #f2f2f2; }
+        body { font-family: Arial, sans-serif; }
+    </style>
+</head>
+<body>
+    <h3>Loan Repayments for Loan #{{ loan.id }} ({{ loan.member.name }})</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rep in repayments %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ rep.date }}</td>
+                <td>{{ rep.amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

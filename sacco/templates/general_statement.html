@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="statement-header text-center mb-4">
+        <h2>General Statement</h2>
+        <h5>{{ member.name }} ({{ member.membership_number }})</h5>
+    </div>
+    <form method="get" class="row g-2 mb-4 align-items-end">
+        <div class="col-auto">
+            <label for="start_date" class="form-label">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+        </div>
+        <div class="col-auto">
+            <label for="end_date" class="form-label">End Date:</label>
+            <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+        </div>
+        <div class="col-auto">
+            <label class="form-label">Include:</label><br>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="show_savings" id="show_savings" value="1" {% if show_savings %}checked{% endif %}>
+                <label class="form-check-label" for="show_savings">Savings</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="show_loans" id="show_loans" value="1" {% if show_loans %}checked{% endif %}>
+                <label class="form-check-label" for="show_loans">Loans</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="show_repayments" id="show_repayments" value="1" {% if show_repayments %}checked{% endif %}>
+                <label class="form-check-label" for="show_repayments">Repayments</label>
+            </div>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+    <a href="{% url 'general-statement-pdf' member.id %}?start_date={{ start_date }}&end_date={{ end_date }}{% if show_savings %}&show_savings=1{% endif %}{% if show_loans %}&show_loans=1{% endif %}{% if show_repayments %}&show_repayments=1{% endif %}" class="btn btn-success mb-3 float-end">Download General Statement (PDF)</a>
+
+    {% if show_savings %}
+    <h4>Savings</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Opening Balance</th>
+                <th>Running Balance</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in savings %}
+            <tr>
+                <td>{{ s.date|date:'d/m/Y' }}</td>
+                <td>{{ s.amount }}</td>
+                <td>{{ s.opening_balance }}</td>
+                <td>{{ s.running_balance }}</td>
+                <td>{{ s.description }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No savings records.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if show_loans %}
+    <h4>Loans</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date Issued</th>
+                <th>Product</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in loans %}
+            <tr>
+                <td>{{ l.date_issued|date:'d/m/Y' }}</td>
+                <td>{{ l.loan_plan.name }}</td>
+                <td>{{ l.amount }}</td>
+                <td>{{ l.status }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No loans found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if show_repayments %}
+    <h4>Repayments</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Loan</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in repayments %}
+            <tr>
+                <td>{{ r.date|date:'d/m/Y' }}</td>
+                <td>{{ r.loan.loan_plan.name }} ({{ r.loan.amount }})</td>
+                <td>{{ r.amount }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No repayments found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

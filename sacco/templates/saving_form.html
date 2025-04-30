@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ action }} Saving</h2>
+    <form method="post" id="savingForm">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            {{ form.member.label_tag }}
+            {{ form.member }}
+        </div>
+        <div class="mb-3">
+            {{ form.amount.label_tag }}
+            {{ form.amount }}
+        </div>
+        <div class="mb-3">
+            {{ form.receipt_no.label_tag }}
+            {{ form.receipt_no }}
+        </div>
+        <div class="mb-3">
+            <small>Debug: capital_share_total = {{ capital_share_total }}</small>
+        </div>
+        <div class="mb-3">
+            {{ form.category.label_tag }}
+            <select name="category" id="id_category" class="form-select">
+                <option value="capital_share" {% if form.category.value == 'capital_share' %}selected{% endif %}>Capital Share</option>
+                <option value="member_deposit" {% if form.category.value == 'member_deposit' %}selected{% endif %} {% if capital_share_total < 10000 %}disabled{% endif %}>Member Deposit</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            {{ form.deposit_type.label_tag }}
+            <select name="deposit_type" id="id_deposit_type" class="form-select" {% if capital_share_total < 10000 or form.category.value == 'capital_share' %}disabled{% endif %}>
+                <option value="">---------</option>
+                <option value="school_fees" {% if form.deposit_type.value == 'school_fees' %}selected{% endif %}>School Fees</option>
+                <option value="vacation" {% if form.deposit_type.value == 'vacation' %}selected{% endif %}>Vacation</option>
+                <option value="other" {% if form.deposit_type.value == 'other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            {{ form.date }}
+        </div>
+        <button type="submit" class="btn btn-primary">{{ action }}</button>
+        <a href="{% url 'savings' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var categoryField = document.getElementById('id_category');
+            var depositTypeField = document.getElementById('id_deposit_type');
+            function toggleDepositType() {
+                if (!categoryField || !depositTypeField) return;
+                var capitalShareTotal = parseFloat('{{ capital_share_total|default:0 }}');
+                if (isNaN(capitalShareTotal)) capitalShareTotal = 0;
+                if (capitalShareTotal < 10000 || categoryField.value === 'capital_share') {
+                    depositTypeField.disabled = true;
+                } else {
+                    depositTypeField.disabled = false;
+                }
+                // Enable Member Deposit option if threshold met
+                var memberDepositOption = categoryField.querySelector('option[value="member_deposit"]');
+                if (memberDepositOption) {
+                    memberDepositOption.disabled = capitalShareTotal < 10000;
+                }
+            }
+            if (categoryField) {
+                categoryField.addEventListener('change', toggleDepositType);
+                toggleDepositType();
+            }
+        });
+    </script>
+</div>
+{% endblock %}

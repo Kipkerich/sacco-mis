@@ -43,7 +43,8 @@
                                         <td>{{ saving.date }}</td>
                                         <td>{{ saving.note }}</td>
                                         <td>
-                                            <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editSavingModal" data-saving-id="{{ saving.id }}" data-member-id="{{ saving.member.id }}" data-amount="{{ saving.amount }}" data-note="{{ saving.note }}">Edit</a>
+                                            <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editSavingModal" data-saving-id="{{ saving.id }}" data-member-id="{{ saving.member.id }}" data-amount="{{ saving.amount }}" data-note="{{ saving.note }}" data-date="{{ saving.date|date:'Y-m-d' }}">Edit</a>
+                                            <a href="{% url 'statement-url' saving.member.id %}" class="btn btn-success btn-sm">Statement</a>
                                             <a href="#" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteSavingModal" data-saving-id="{{ saving.id }}">Delete</a>
                                         </td>
                                     </tr>
@@ -100,8 +101,12 @@
             <input type="number" class="form-control" id="amount" name="amount" step="0.01" required>
           </div>
           <div class="mb-3">
-            <label for="note" class="form-label">Note</label>
-            <input type="text" class="form-control" id="note" name="note">
+            <label for="date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="date" name="date">
+          </div>
+          <div class="mb-3">
+            <label for="note" class="form-label">Receipt No</label>
+            <input type="text" class="form-control" id="receipt_no" name="note">
           </div>
         </div>
         <div class="modal-footer">
@@ -136,6 +141,10 @@
           <div class="mb-3">
             <label for="edit-amount" class="form-label">Amount</label>
             <input type="number" class="form-control" id="edit-amount" name="amount" step="0.01" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit-date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="edit-date" name="date">
           </div>
           <div class="mb-3">
             <label for="edit-note" class="form-label">Note</label>
@@ -182,10 +191,12 @@ editSavingModal.addEventListener('show.bs.modal', function (event) {
   var memberId = button.getAttribute('data-member-id');
   var amount = button.getAttribute('data-amount');
   var note = button.getAttribute('data-note');
+  var date = button.getAttribute('data-date');
   var form = document.getElementById('editSavingForm');
   form.action = `/savings/${savingId}/edit/`;
   document.getElementById('edit-member').value = memberId;
   document.getElementById('edit-amount').value = amount;
+  document.getElementById('edit-date').value = date;
   document.getElementById('edit-note').value = note;
 });
 // Populate Delete Savings Modal

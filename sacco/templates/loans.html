@@ -37,6 +37,7 @@
                                data-member-name="{{ loan.member.name }}" data-member-email="{{ loan.member.email }}" 
                                data-member-phone="{{ loan.member.phone }}" data-loan-plan-id="{{ loan.loan_plan.id }}" 
                                data-date-issued="{{ loan.date_issued }}">Edit</a>
+                            <a href="{% url 'loan-schedule-view' loan.id %}" class="btn btn-info btn-sm">View Schedule</a>
                         </td>
                     </tr>
                     {% empty %}
@@ -57,7 +58,7 @@
 <div class="modal fade" id="addLoanModal" tabindex="-1" aria-labelledby="addLoanModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="post" action="{% url 'loan-add' %}">
+      <form method="post" action="{% url 'loan-add' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="modal-header">
           <h5 class="modal-title" id="addLoanModalLabel">Add Loan</h5>
@@ -99,6 +100,30 @@
           <div class="mb-3">
             <label for="due_date" class="form-label">Due Date</label>
             <input type="date" class="form-control" id="due_date" name="due_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="reference_number" class="form-label">Loan Reference Number</label>
+            <input type="text" class="form-control" id="reference_number" name="reference_number">
+          </div>
+          <div class="mb-3">
+            <label for="id_document" class="form-label">Upload ID Document <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" id="id_document" name="id_document" required accept="application/pdf,image/*">
+          </div>
+          <div class="mb-3">
+            <label for="current_payslip" class="form-label">Upload Current Payslip (if employed)</label>
+            <input type="file" class="form-control" id="current_payslip" name="current_payslip" accept="application/pdf,image/*">
+          </div>
+          <div class="mb-3">
+            <label for="bank_statement" class="form-label">Upload Bank Statement</label>
+            <input type="file" class="form-control" id="bank_statement" name="bank_statement" accept="application/pdf,image/*">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Repayment Schedule</label>
+            <div id="loan-schedule-section">
+              <button type="button" id="generate-schedule-btn" class="btn btn-outline-primary btn-sm mb-2">Generate Schedule</button>
+              <div id="loan-schedule-table-container"></div>
+              <a href="#" id="download-schedule-pdf" class="btn btn-outline-success btn-sm mt-2" style="display:none;">Download Schedule (PDF)</a>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -155,7 +180,7 @@
             <label for="edit-amount" class="form-label">Loan Amount</label>
             <input type="number" class="form-control" id="edit-amount" name="amount" required onchange="validateAmount()">
           </div>
-          <div class="mb-3">
+          <div class="mb-3" hidden>
             <label for="edit-status" class="form-label">Status</label>
             <select class="form-select" id="edit-status" name="status" required>
               <option value="pending">Pending</option>
@@ -182,6 +207,10 @@
     </div>
   </div>
 </div>
+
+{% load static %}
+
+<script src="{% static 'js/loan_schedule.js' %}"></script>
 
 <script>
   function validateAmount() {
@@ -240,7 +269,7 @@ editLoanModal.addEventListener('show.bs.modal', function (event) {
   // Set status dropdown
   var statusSelect = document.getElementById('edit-status');
   if (statusSelect) {
-    for (var i = 0; i < statusSelect.options.length; i++) {
+    for (var i = 0; i <statusSelect.options.length; i++) {
       statusSelect.options[i].selected = statusSelect.options[i].value === status;
     }
   }

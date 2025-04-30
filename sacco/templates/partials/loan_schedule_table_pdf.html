@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Loan Repayment Schedule</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #888; padding: 6px; text-align: center; }
+        th { background: #f2f2f2; }
+        body { font-family: Arial, sans-serif; }
+    </style>
+</head>
+<body>
+<h3>Loan Repayment Schedule</h3>
+<p><b>Plan:</b> {{ plan.name }}<br><b>Loan Amount:</b> {{ amount }}</p>
+<table>
+    <thead>
+        <tr>
+            <th>Month</th>
+            <th>Principal</th>
+            <th>Interest</th>
+            <th>Total Payment</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in schedule %}
+        <tr>
+            <td>{{ row.month }}</td>
+            <td>{{ row.principal }}</td>
+            <td>{{ row.interest }}</td>
+            <td>{{ row.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

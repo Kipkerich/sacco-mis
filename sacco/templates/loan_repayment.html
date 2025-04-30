@@ -5,6 +5,7 @@
         <div class="col">
             <h2 class="fw-bold">Loan Repayment</h2>
             <p class="text-muted">Record and view loan repayments.</p>
+            <button id="exportPDF" style="margin-bottom: 1em;">Export to PDF</button>
         </div>
     </div>
     <div class="card shadow border-0">
@@ -48,4 +49,14 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+document.getElementById('exportPDF').addEventListener('click', function () {
+    var element = document.body; // Export the whole page. Change to a specific div if needed.
+    html2pdf().from(element).save('loan_repayment.pdf');
+});
+</script>
 {% endblock %}

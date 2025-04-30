@@ -16,7 +16,21 @@
             <p class="mb-1"><strong>Email:</strong> {{ member.email }}</p>
             <p class="mb-1"><strong>Phone:</strong> {{ member.phone }}</p>
             <p class="mb-1"><strong>Address:</strong> {{ member.address }}</p>
-            <p class="mb-1"><strong>Status:</strong> {% if member.status %}Active{% else %}Inactive{% endif %}</p>
+            <p class="mb-1"><strong>Status:</strong> 
+                {% if member.status %}
+                    <span class="badge bg-success">Active</span>
+                {% else %}
+                    <span class="badge bg-danger">Inactive</span>
+                {% endif %}
+            </p>
+            <form method="post" action="{% url 'member_toggle_status' member.id %}" style="display:inline;">
+                {% csrf_token %}
+                {% if member.status %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Mark as Inactive</button>
+                {% else %}
+                    <button type="submit" class="btn btn-outline-success btn-sm">Mark as Active</button>
+                {% endif %}
+            </form>
             <p class="mb-1"><strong>Date Joined:</strong> {{ member.date_joined }}</p>
         </div>
     </div>
