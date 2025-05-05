@@ -350,6 +350,40 @@ def saving_delete(request, id):
         return redirect('savings')
     return render(request, 'member_confirm_delete.html', {'member': saving})
 
+@login_required
+def saving_edit_type(request, id):
+    saving = get_object_or_404(Saving, id=id)
+    if request.method == 'POST':
+        savings_type = request.POST.get('savings_type')
+        if savings_type:
+            # Update Saving
+            saving.savings_type = savings_type
+            # Update category/deposit_type fields
+            if savings_type == 'capital_share':
+                saving.category = 'capital_share'
+                saving.deposit_type = ''
+            else:
+                saving.category = 'member_deposit'
+                saving.deposit_type = savings_type
+            saving.save()
+            # Update related SavingStatement(s)
+            from .models import SavingStatement
+            statements = SavingStatement.objects.filter(
+                member=saving.member,
+                amount=saving.amount,
+                date__date=saving.date
+            )
+            for statement in statements:
+                if savings_type == 'capital_share':
+                    statement.category = 'capital_share'
+                    statement.deposit_type = ''
+                else:
+                    statement.category = 'member_deposit'
+                    statement.deposit_type = savings_type
+                statement.save()
+        return redirect(request.META.get('HTTP_REFERER', 'savings'))
+    return redirect('savings')
+
 # Loans Views
 @login_required
 def loans_list(request):

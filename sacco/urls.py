@@ -30,6 +30,7 @@ urlpatterns = [
     path('savings/add/', views.saving_add, name='saving-add'),
     path('savings/<int:id>/edit/', views.saving_edit, name='saving-edit'),
     path('savings/<int:id>/delete/', views.saving_delete, name='saving-delete'),
+    path('savings/<int:id>/edit-type/', views.saving_edit_type, name='saving-edit-type'),
 
     # Loans
     path('loans/', views.loans_list, name='loans'),
