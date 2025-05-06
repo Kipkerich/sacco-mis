@@ -285,15 +285,14 @@ def saving_add(request):
                     amount=to_capital_share,
                     receipt_no=receiptNo,
                     category='capital_share',
-                    date=date,
-                    deposit_type=None
+                    date=date
                 )
                 from sacco.utils import create_saving_statement
                 create_saving_statement(
                     member=member,
                     amount=to_capital_share,
                     category='capital_share',
-                    deposit_type=None,
+                    deposit_type=form.cleaned_data.get('deposit_type'),
                     description=f"Capital Share deposit of {to_capital_share}"
                 )
             # Save Member Deposit part if any

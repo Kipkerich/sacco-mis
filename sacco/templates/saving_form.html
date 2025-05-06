@@ -29,11 +29,14 @@
         </div>
         <div class="mb-3">
             {{ form.deposit_type.label_tag }}
-            <select name="deposit_type" id="id_deposit_type" class="form-select" {% if capital_share_total < 10000 or form.category.value == 'capital_share' %}disabled{% endif %}>
+            <select name="deposit_type" id="id_deposit_type" class="form-select">
                 <option value="">---------</option>
-                <option value="school_fees" {% if form.deposit_type.value == 'school_fees' %}selected{% endif %}>School Fees</option>
-                <option value="vacation" {% if form.deposit_type.value == 'vacation' %}selected{% endif %}>Vacation</option>
-                <option value="other" {% if form.deposit_type.value == 'other' %}selected{% endif %}>Other</option>
+                <option value="other">None</option>
+                {% if capital_share_total >= 10000 and form.category.value != 'capital_share' %}
+                    <option value="school_fees" {% if form.deposit_type.value == 'school_fees' %}selected{% endif %}>School Fees</option>
+                    <option value="vacation" {% if form.deposit_type.value == 'vacation' %}selected{% endif %}>Vacation</option>
+                    <option value="other" {% if form.deposit_type.value == 'other' %}selected{% endif %}>Other</option>
+                {% endif %}
             </select>
         </div>
         <div class="mb-3">
@@ -51,7 +54,7 @@
                 var capitalShareTotal = parseFloat('{{ capital_share_total|default:0 }}');
                 if (isNaN(capitalShareTotal)) capitalShareTotal = 0;
                 if (capitalShareTotal < 10000 || categoryField.value === 'capital_share') {
-                    depositTypeField.disabled = true;
+                    //depositTypeField.disabled = true;
                 } else {
                     depositTypeField.disabled = false;
                 }

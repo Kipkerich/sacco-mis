@@ -48,8 +48,8 @@ class SavingForm(forms.ModelForm):
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
             'date': forms.DateInput(attrs={'type': 'date', 'class':'form-control'}),
             'receipt_no': forms.TextInput(attrs={'class': 'form-control'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'deposit_type': forms.Select(attrs={'class': 'form-select'}),
+            'category': forms.Select(attrs={'class': 'form-select', 'required':False}),
+            'deposit_type': forms.Select(attrs={'class': 'form-select', 'id': 'deposit_type', 'required': False}),
         }
 
 class LoanForm(forms.ModelForm):
