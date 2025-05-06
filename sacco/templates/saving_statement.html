@@ -237,6 +237,37 @@
       </div>
     </div>
   </div>
+  <div class="modal fade" id="editSavingModal" tabindex="-1" aria-labelledby="editSavingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="editSavingForm" action="{% url 'saving-edit-type' 0 %}" 
+                  onsubmit="this.action=this.action.replace('/0/','/' + document.getElementById('edit-saving-id').value + '/');">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSavingModalLabel">Edit Deposit Type</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-saving-id" name="saving_id" value="">
+                    <div class="form-group">
+                        <label for="id_deposit_type">Deposit Type</label>
+                        <select name="deposit_type" id="id_deposit_type" class="form-select">
+                            <option value="other">None</option>
+                            <option value="school_fees">School Fees</option>
+                            <option value="vacation">Vacation</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <script>
   var editSavingModal = document.getElementById('editSavingModal');
   if (editSavingModal) {
