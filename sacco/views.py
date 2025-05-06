@@ -1173,3 +1173,18 @@ def delete_source_of_income(request):
         source.delete()
         return JsonResponse({'deleted': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required
+@require_POST
+def saving_edit_type(request, id):
+    print(f"Received request to edit saving with ID: {id}")  # Debugging line
+    print(f"Request POST data: {request.POST}")  # Debugging line
+
+    saving_statement = get_object_or_404(SavingStatement, id=id)
+    print(f"Found saving statement: {saving_statement}")  # Debugging line
+    new_deposit_type = request.POST.get('savings_type')
+    saving_statement.deposit_type = new_deposit_type
+    saving_statement.save()
+    print(f"Updated saving deposit type to: {new_deposit_type}")  # Debugging line
+    
+    return JsonResponse({'status': 'success', 'message': 'Deposit type updated successfully.'})
