@@ -30,7 +30,7 @@ urlpatterns = [
     path('savings/add/', views.saving_add, name='saving-add'),
     path('savings/<int:id>/edit/', views.saving_edit, name='saving-edit'),
     path('savings/<int:id>/delete/', views.saving_delete, name='saving-delete'),
-
+    path('savings/<int:id>/edit-type/', views.saving_edit_type, name='saving-edit-type'),
     # Loans
     path('loans/', views.loans_list, name='loans'),
     path('loans/add/', views.loan_add, name='loan-add'),
@@ -53,7 +53,6 @@ urlpatterns = [
     path('sources-of-income/add/', views.add_source_of_income, name='add-source-of-income'),
     path('sources-of-income/update/', views.update_source_of_income, name='update-source-of-income'),
     path('sources-of-income/delete/', views.delete_source_of_income, name='delete-source-of-income'),
-
     # Loan Product Types
     path('loan-product-types/', views.loan_product_type_list, name='loan-product-type-list'),
     path('loan-product-types/<int:id>/edit/', views.loan_product_type_edit, name='loan-product-type-edit'),

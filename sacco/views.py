@@ -285,15 +285,14 @@ def saving_add(request):
                     amount=to_capital_share,
                     receipt_no=receiptNo,
                     category='capital_share',
-                    date=date,
-                    deposit_type=None
+                    date=date
                 )
                 from sacco.utils import create_saving_statement
                 create_saving_statement(
                     member=member,
                     amount=to_capital_share,
                     category='capital_share',
-                    deposit_type=None,
+                    deposit_type=form.cleaned_data.get('deposit_type'),
                     description=f"Capital Share deposit of {to_capital_share}"
                 )
             # Save Member Deposit part if any
@@ -352,6 +351,40 @@ def saving_delete(request, id):
         saving.delete()
         return redirect('savings')
     return render(request, 'member_confirm_delete.html', {'member': saving})
+
+@login_required
+def saving_edit_type(request, id):
+    saving = get_object_or_404(Saving, id=id)
+    if request.method == 'POST':
+        savings_type = request.POST.get('savings_type')
+        if savings_type:
+            # Update Saving
+            saving.savings_type = savings_type
+            # Update category/deposit_type fields
+            if savings_type == 'capital_share':
+                saving.category = 'capital_share'
+                saving.deposit_type = ''
+            else:
+                saving.category = 'member_deposit'
+                saving.deposit_type = savings_type
+            saving.save()
+            # Update related SavingStatement(s)
+            from .models import SavingStatement
+            statements = SavingStatement.objects.filter(
+                member=saving.member,
+                amount=saving.amount,
+                date__date=saving.date
+            )
+            for statement in statements:
+                if savings_type == 'capital_share':
+                    statement.category = 'capital_share'
+                    statement.deposit_type = ''
+                else:
+                    statement.category = 'member_deposit'
+                    statement.deposit_type = savings_type
+                statement.save()
+        return redirect(request.META.get('HTTP_REFERER', 'savings'))
+    return redirect('savings')
 
 # Loans Views
 @login_required
@@ -1140,3 +1173,18 @@ def delete_source_of_income(request):
         source.delete()
         return JsonResponse({'deleted': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required
+@require_POST
+def saving_edit_type(request, id):
+    print(f"Received request to edit saving with ID: {id}")  # Debugging line
+    print(f"Request POST data: {request.POST}")  # Debugging line
+
+    saving_statement = get_object_or_404(SavingStatement, id=id)
+    print(f"Found saving statement: {saving_statement}")  # Debugging line
+    new_deposit_type = request.POST.get('savings_type')
+    saving_statement.deposit_type = new_deposit_type
+    saving_statement.save()
+    print(f"Updated saving deposit type to: {new_deposit_type}")  # Debugging line
+    
+    return JsonResponse({'status': 'success', 'message': 'Deposit type updated successfully.'})

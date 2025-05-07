@@ -148,9 +148,10 @@
                 <td>{{ s.amount }}</td>
                 <td>{{ s.running_balance }}</td>
                 <td>{{ s.description }}</td>
+                <td><a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editSavingModal" data-saving-id="{{ s.id }}" data-type="{{ s.deposit_type }}">Edit</a></td>
             </tr>
             {% empty %}
-            <tr><td colspan="5">No school fees transactions.</td></tr>
+            <tr><td colspan="6">No school fees transactions.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -173,9 +174,10 @@
                 <td>{{ s.amount }}</td>
                 <td>{{ s.running_balance }}</td>
                 <td>{{ s.description }}</td>
+                <td><a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editSavingModal" data-saving-id="{{ s.id }}" data-type="{{ s.deposit_type }}">Edit</a></td>
             </tr>
             {% empty %}
-            <tr><td colspan="5">No vacation transactions.</td></tr>
+            <tr><td colspan="6">No vacation transactions.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -188,6 +190,7 @@
                 <th>Amount</th>
                 <th>Running Balance</th>
                 <th>Description</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -198,10 +201,10 @@
                 <td>{{ s.amount }}</td>
                 <td>{{ s.running_balance }}</td>
                 <td>{{ s.description }}</td>
-                <td><a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editSavingModal" data-saving-id="{{ saving.id }}" data-member-id="{{ saving.member.id }}" data-amount="{{ saving.amount }}" data-note="{{ saving.note }}" data-date="{{ saving.date|date:'Y-m-d' }}">Edit</a></td>
+                <td><a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editSavingModal" data-saving-id="{{ s.id }}" data-type="{{ s.savings_type }}">Edit</a></td>
             </tr>
             {% empty %}
-            <tr><td colspan="5">No other transactions.</td></tr>
+            <tr><td colspan="6">No other transactions.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -209,33 +212,22 @@
 <div class="modal fade" id="editSavingModal" tabindex="-1" aria-labelledby="editSavingModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form method="post" id="editSavingForm">
+        <form method="post" id="editSavingForm" action="{% url 'saving-edit-type' 0 %}" onsubmit="this.action=this.action.replace('/0/','/' + document.getElementById('edit-saving-id').value + '/');">
           {% csrf_token %}
+          <input type="hidden" id="edit-saving-id" name="saving_id">
           <div class="modal-header">
-            <h5 class="modal-title" id="editSavingModalLabel">Edit Savings</h5>
+            <h5 class="modal-title" id="editSavingModalLabel">Edit Savings Type</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="mb-3">
-              <label for="edit-member" class="form-label">Member</label>
-              <select class="form-select" id="edit-member" name="member" required>
-                <option value="">-- Select Member --</option>
-                {% for member in members %}
-                  <option value="{{ member.id }}">{{ member.name }} ({{ member.membership_number }})</option>
-                {% endfor %}
+              <label for="edit-savings-type" class="form-label">Savings Type</label>
+              <select class="form-select" id="edit-savings-type" name="savings_type" required>
+                <option value="">-- Select Type --</option>
+                <option value="school_fees">Member Deposit: School Fees</option>
+                <option value="vacation">Member Deposit: Vacation</option>
+                <option value="other">Member Deposit: Other</option>
               </select>
-            </div>
-            <div class="mb-3">
-              <label for="edit-amount" class="form-label">Amount</label>
-              <input type="number" class="form-control" id="edit-amount" name="amount" step="0.01" required>
-            </div>
-            <div class="mb-3">
-              <label for="edit-date" class="form-label">Date</label>
-              <input type="date" class="form-control" id="edit-date" name="date">
-            </div>
-            <div class="mb-3">
-              <label for="edit-note" class="form-label">Note</label>
-              <input type="text" class="form-control" id="edit-note" name="note">
             </div>
           </div>
           <div class="modal-footer">
@@ -246,4 +238,17 @@
       </div>
     </div>
   </div>
+</div>
+<script>
+  var editSavingModal = document.getElementById('editSavingModal');
+  if (editSavingModal) {
+    editSavingModal.addEventListener('show.bs.modal', function (event) {
+      var button = event.relatedTarget;
+      if (!button) return;
+      document.getElementById('edit-saving-id').value = button.getAttribute('data-saving-id');
+      var type = button.getAttribute('data-type');
+      document.getElementById('edit-savings-type').value = type;
+    });
+  }
+</script>
 {% endblock %}
