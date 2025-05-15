@@ -2,36 +2,116 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Loan Repayment Schedule</title>
+    <title>Loan Amortization Schedule</title>
     <style>
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #888; padding: 6px; text-align: center; }
-        th { background: #f2f2f2; }
-        body { font-family: Arial, sans-serif; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            font-size: 12px;
+        }
+        h2, h3 { 
+            color: #333; 
+            margin-bottom: 10px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .loan-details {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .loan-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .loan-details td {
+            padding: 5px;
+            border: none;
+        }
+        table.schedule { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin-top: 10px;
+        }
+        table.schedule th, table.schedule td { 
+            border: 1px solid #888; 
+            padding: 6px; 
+            text-align: right; 
+            font-size: 11px;
+        }
+        table.schedule th { 
+            background: #f2f2f2; 
+            text-align: center;
+            font-weight: bold;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 10px;
+            text-align: center;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-<h3>Loan Repayment Schedule</h3>
-<p><b>Plan:</b> {{ plan.name }}<br><b>Loan Amount:</b> {{ amount }}</p>
-<table>
-    <thead>
-        <tr>
-            <th>Month</th>
-            <th>Principal</th>
-            <th>Interest</th>
-            <th>Total Payment</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in schedule %}
-        <tr>
-            <td>{{ row.month }}</td>
-            <td>{{ row.principal }}</td>
-            <td>{{ row.interest }}</td>
-            <td>{{ row.total }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="header">
+        <h2>Loan Amortization Schedule</h2>
+        {% if ref_number %}<p>Reference Number: {{ ref_number }}</p>{% endif %}
+    </div>
+
+    <div class="loan-details">
+        <table>
+            <tr>
+                <td><strong>Loan Plan:</strong></td>
+                <td>{{ plan.name }}</td>
+                <td><strong>Loan Amount:</strong></td>
+                <td class="text-right">KES {{ amount|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td><strong>Interest Rate:</strong></td>
+                <td>{{ interest_rate }}% per annum</td>
+                <td><strong>Loan Term:</strong></td>
+                <td class="text-right">{{ months }} months</td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="schedule">
+        <thead>
+            <tr>
+                <th>Month</th>
+                {% if schedule.0.due_date %}<th>Due Date</th>{% endif %}
+                <th>Principal Payment</th>
+                <th>Interest Payment</th>
+                <th>Total Payment</th>
+                <th>Remaining Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in schedule %}
+            <tr>
+                <td class="text-center">{{ row.month }}</td>
+                {% if row.due_date %}<td class="text-center">{{ row.due_date }}</td>{% endif %}
+                <td>{{ row.principal|floatformat:2 }}</td>
+                <td>{{ row.interest|floatformat:2 }}</td>
+                <td>{{ row.total|floatformat:2 }}</td>
+                <td>{{ row.balance|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>This amortization schedule is for informational purposes only. Actual loan terms may vary.</p>
+        <p>Generated on: {% now "F j, Y" %}</p>
+    </div>
 </body>
 </html>
