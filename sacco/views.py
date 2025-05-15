@@ -919,7 +919,8 @@ def loan_schedule_view(request, loan_id):
         balance = balance - item.total
         item.balance = balance
         item.save()
-    return render(request, 'loan_schedule_view.html', {'loan': loan, 'schedule': schedule, 'role': role})
+    updated_schedule = loan.repayment_schedule.order_by('month')
+    return render(request, 'loan_schedule_view.html', {'loan': loan, 'schedule': updated_schedule, 'role': role})
 
 @login_required
 def loan_schedule_view_pdf(request, loan_id):
