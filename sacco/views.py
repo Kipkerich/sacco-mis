@@ -914,16 +914,35 @@ def loan_schedule_view(request, loan_id):
     role=Profile.objects.get(user=request.user).type
     loan = get_object_or_404(Loan, id=loan_id)
     schedule = loan.repayment_schedule.order_by('month')
-    return render(request, 'loan_schedule_view.html', {'loan': loan, 'schedule': schedule, 'role': role})
+    balance = loan.amount
+    for item in schedule:
+        balance = balance - item.total
+        item.balance = balance
+        item.save()
+    updated_schedule = loan.repayment_schedule.order_by('month')
+    return render(request, 'loan_schedule_view.html', {'loan': loan, 'schedule': updated_schedule, 'role': role})
 
 @login_required
 def loan_schedule_view_pdf(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
     schedule = loan.repayment_schedule.order_by('month')
+    
+    # Create a comprehensive context with all necessary data
+    context = {
+        'schedule': schedule, 
+        'plan': loan.loan_plan, 
+        'amount': loan.amount, 
+        'loan': loan,
+        'interest_rate': loan.loan_plan.interest_rate,
+        'months': loan.loan_plan.duration_months,
+        'ref_number': loan.reference_number
+    }
+    
     from django.template.loader import render_to_string
     from django.http import HttpResponse
     import weasyprint
-    html = render_to_string('partials/loan_schedule_table_pdf.html', {'schedule': schedule, 'plan': loan.loan_plan, 'amount': loan.amount, 'loan': loan})
+    
+    html = render_to_string('partials/loan_schedule_table_pdf.html', context)
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="loan_{loan.id}_schedule.pdf"'
     weasyprint.HTML(string=html).write_pdf(response)
@@ -1046,7 +1065,6 @@ def upload_sql_view(request):
 
 @require_GET
 def loan_schedule(request):
-    from django.shortcuts import render
     amount = request.GET.get('amount', '0')
     try:
         principal = Decimal(amount)
@@ -1061,19 +1079,53 @@ def loan_schedule(request):
     except LoanPlan.DoesNotExist:
         return render(request, 'partials/loan_schedule_table.html', {'schedule': [], 'error': 'Invalid loan plan.'})
     months = plan.duration_months
-    rate = plan.interest_rate / Decimal('100')
+    annual_rate = plan.interest_rate / Decimal('100')
+    
+    # Calculate monthly interest rate (annual rate divided by 12)
+    monthly_rate = annual_rate / Decimal('12')
+    
     schedule = []
     if months > 0 and principal > 0:
-        monthly_interest = principal * rate / months
-        monthly_payment = (principal + (principal * rate)) / months
+        # Calculate fixed monthly payment using amortization formula
+        # PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
+        # Where:
+        # PMT = monthly payment
+        # P = principal
+        # r = monthly interest rate
+        # n = number of months
+        
+        # Calculate (1+r)^n
+        factor = (Decimal('1') + monthly_rate) ** months
+        
+        # Calculate monthly payment
+        monthly_payment = principal * (monthly_rate * factor) / (factor - Decimal('1'))
+        
+        # Initialize remaining principal
+        remaining_principal = principal
+        
         for i in range(1, months + 1):
+            # Calculate interest for this month
+            interest_payment = remaining_principal * monthly_rate
+            
+            # Calculate principal for this month
+            principal_payment = monthly_payment - interest_payment
+            
+            # Update remaining principal
+            remaining_principal = remaining_principal - principal_payment
+            
+            # Ensure remaining principal doesn't go below zero due to rounding
+            if remaining_principal < Decimal('0.01'):
+                remaining_principal = Decimal('0')
+            
             schedule.append({
                 'month': i,
                 'due_date': '',
-                'principal': round(principal / months, 2),
-                'interest': round(monthly_interest, 2),
+                'principal': round(principal_payment, 2),
+                'interest': round(interest_payment, 2),
                 'total': round(monthly_payment, 2),
+                'balance': round(remaining_principal, 2)
             })
+            print(schedule)
     return render(request, 'partials/loan_schedule_table.html', {'schedule': schedule, 'error': None})
 
 @require_GET
@@ -1092,27 +1144,89 @@ def loan_schedule_pdf(request):
     except LoanPlan.DoesNotExist:
         from django.http import HttpResponse
         return HttpResponse('Invalid loan plan.', content_type='text/plain')
+    
     months = plan.duration_months
-    rate = plan.interest_rate / Decimal('100')
+    annual_rate = plan.interest_rate / Decimal('100')
+    
+    # Calculate monthly interest rate (annual rate divided by 12)
+    monthly_rate = annual_rate / Decimal('12')
+    
     schedule = []
     if months > 0 and principal > 0:
-        monthly_interest = principal * rate / months
-        monthly_payment = (principal + (principal * rate)) / months
+        # Calculate fixed monthly payment using amortization formula
+        # PMT = P * [r(1+r)^n] / [(1+r)^n - 1]
+        # Where:
+        # PMT = monthly payment
+        # P = principal
+        # r = monthly interest rate
+        # n = number of months
+        
+        # Calculate (1+r)^n
+        factor = (Decimal('1') + monthly_rate) ** months
+        
+        # Calculate monthly payment
+        monthly_payment = principal * (monthly_rate * factor) / (factor - Decimal('1'))
+        
+        # Initialize remaining principal
+        remaining_principal = principal
+        
         for i in range(1, months + 1):
+            # Calculate interest for this month
+            interest_payment = remaining_principal * monthly_rate
+            
+            # Calculate principal for this month
+            principal_payment = monthly_payment - interest_payment
+            
+            # Update remaining principal
+            remaining_principal = remaining_principal - principal_payment
+            
+            # Ensure remaining principal doesn't go below zero due to rounding
+            if remaining_principal < Decimal('0.01'):
+                remaining_principal = Decimal('0')
+            
+            # Add a formatted due date if provided
+            month_due_date = ''
+            if due_date:
+                try:
+                    start_date = parse_date(due_date)
+                    if start_date:
+                        month_due_date = (start_date + relativedelta(months=i-1)).strftime('%Y-%m-%d')
+                except:
+                    pass
+            
             schedule.append({
                 'month': i,
-                'due_date': '',
-                'principal': round(principal / months, 2),
-                'interest': round(monthly_interest, 2),
+                'due_date': month_due_date,
+                'principal': round(principal_payment, 2),
+                'interest': round(interest_payment, 2),
                 'total': round(monthly_payment, 2),
+                'balance': round(remaining_principal, 2)
             })
+    
     from django.template.loader import render_to_string
     from django.http import HttpResponse
     import weasyprint
-    html = render_to_string('partials/loan_schedule_table_pdf.html', {'schedule': schedule, 'plan': plan, 'amount': principal})
+    
+    # Create context with all necessary data
+    context = {
+        'schedule': schedule, 
+        'plan': plan, 
+        'amount': principal,
+        'interest_rate': plan.interest_rate,
+        'months': months,
+        'ref_number': ref_number
+    }
+    
+    # Render the HTML template
+    html = render_to_string('partials/loan_schedule_table_pdf.html', context)
+    
+    # Create the HTTP response with PDF content
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="loan_schedule.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="loan_schedule_{ref_number or "report"}.pdf"'
+    
+    # Generate PDF from HTML
     weasyprint.HTML(string=html).write_pdf(response)
+    
     return response
 
 @login_required

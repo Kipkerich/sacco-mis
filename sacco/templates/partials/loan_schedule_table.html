@@ -9,6 +9,7 @@
             <th>Principal</th>
             <th>Interest</th>
             <th>Total Payment</th>
+            <th>Remaining Balance</th>
         </tr>
     </thead>
     <tbody>
@@ -18,6 +19,7 @@
             <td>{{ row.principal }}</td>
             <td>{{ row.interest }}</td>
             <td>{{ row.total }}</td>
+            <td>{{ row.balance }}</td>
         </tr>
         {% endfor %}
     </tbody>

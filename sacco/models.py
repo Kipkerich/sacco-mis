@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 import datetime
 
-# Create your models here.
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='profile')
     name = models.CharField(max_length=100, default='name', null=True, blank=True)
@@ -118,6 +117,7 @@ class LoanRepaymentSchedule(models.Model):
     principal = models.DecimalField(max_digits=12, decimal_places=2)
     interest = models.DecimalField(max_digits=12, decimal_places=2)
     total = models.DecimalField(max_digits=12, decimal_places=2)
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
     def __str__(self):
         return f"Loan {self.loan.id} - Month {self.month}: {self.total}"
