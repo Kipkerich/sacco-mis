@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Profile, Member, Saving, Loan, LoanRepayment, Borrower, LoanPlan, LoanProductType, LoanRepaymentSchedule, NextOfKin, SourceOfIncome
+from .models import User, Profile, Member, Saving, Loan, LoanRepayment, Borrower, LoanPlan, LoanProductType, LoanRepaymentSchedule, NextOfKin, SourceOfIncome, LockedSaving
+from decimal import Decimal
 from .forms import MemberForm, SavingForm, LoanForm, LoanRepaymentForm, NextOfKinForm, BorrowerForm
 from django.db.models import Sum
 from django.http import JsonResponse, HttpResponse
@@ -514,33 +515,83 @@ def download_repayments_csv(request, loan_id):
 
 @login_required
 def loan_repayment(request, loan_id):
-    role=Profile.objects.get(user=request.user).type
+    role = Profile.objects.get(user=request.user).type
     loan = get_object_or_404(Loan, id=loan_id)
     repayments = LoanRepayment.objects.filter(loan=loan)
     total_repaid = repayments.aggregate(total=models.Sum('amount'))['total'] or 0
     pending = loan.amount - total_repaid
     feedback = None
+    
     if request.method == 'POST':
-        print(request)
-        model=LoanRepayment
         form = LoanRepaymentForm(request.POST)
         if form.is_valid():
             repayment = form.save(commit=False)
             repayment.loan = loan
             repay_amount = repayment.amount
+            
+            # Calculate the new balance after this repayment
+            new_total_repaid = total_repaid + repay_amount
+            new_balance = max(0, loan.amount - new_total_repaid)
+            
+            # Check if this repayment will fully pay off the loan
+            will_fully_repay = new_balance <= 0
+            
             if repay_amount > pending:
+                # Handle overpayment
                 repayment.amount = pending
                 repayment.save()
                 excess = repay_amount - pending
                 if excess > 0:
-                    Saving.objects.create(member=loan.member, amount=excess, note=f'Excess loan repayment for Loan #{loan.id}')
+                    Saving.objects.create(
+                        member=loan.member, 
+                        amount=excess, 
+                        note=f'Excess loan repayment for Loan #{loan.id}'
+                    )
                     feedback = f"Excess repayment of {excess} added to savings."
+                
+                # Mark loan as fully repaid
+                loan.status = 'repaid'
+                loan.save()
+                
+                # Release locked savings
+                success, message = release_guarantors_savings(loan)
+                if success:
+                    feedback = f"Loan fully repaid. {message}" + (f" {feedback}" if feedback else "")
+                else:
+                    feedback = f"Loan fully repaid, but there was an error releasing guarantors' savings: {message}"
+                    
             else:
+                # Normal repayment
                 repayment.save()
-            return render(request, 'loan_repayment.html', {'form': LoanRepaymentForm(initial={'loan': loan}), 'repayments': LoanRepayment.objects.filter(loan=loan), 'pending': loan.amount - (total_repaid + repay_amount if repay_amount <= pending else pending), 'feedback': feedback})
+                
+                # Check if this was the final payment
+                if abs(new_balance) < 0.01:  # Handle floating point precision
+                    loan.status = 'repaid'
+                    loan.save()
+                    success, message = release_guarantors_savings(loan)
+                    if success:
+                        feedback = f"Loan fully repaid. {message}"
+                    else:
+                        feedback = f"Loan fully repaid, but there was an error releasing guarantors' savings: {message}"
+            
+            # Redirect to prevent form resubmission
+            return redirect('loan-repayment', loan_id=loan.id)
     else:
         form = LoanRepaymentForm(initial={'loan': loan})
-    return render(request, 'loan_repayment.html', {'form': form, 'repayments': repayments, 'pending': pending, 'feedback': feedback,'role': role})
+    
+    # Calculate current totals for display
+    current_repayments = LoanRepayment.objects.filter(loan=loan)
+    current_total_repaid = current_repayments.aggregate(total=models.Sum('amount'))['total'] or 0
+    current_pending = max(0, loan.amount - current_total_repaid)
+    
+    return render(request, 'loan_repayment.html', {
+        'form': form, 
+        'repayments': current_repayments.order_by('-date'), 
+        'pending': current_pending, 
+        'feedback': feedback,
+        'role': role,
+        'loan': loan
+    })
 
 @login_required
 def loan_repayments_list(request, loan_id):
@@ -719,6 +770,61 @@ def repayments_page(request):
         loan.pending_amount = loan.amount - loan.total_repaid
     return render(request, 'repayments.html', {'loans': loans, 'q': query, 'status': status, 'role': role})
 
+def release_guarantors_savings(loan):
+    """
+    Release locked savings for all guarantors of a loan
+    """
+    try:
+        # Get all active locked savings for this loan
+        locked_savings = LockedSaving.objects.filter(loan=loan, is_active=True)
+        
+        # Update all locked savings to be inactive
+        updated = locked_savings.update(
+            is_active=False,
+            date_released=timezone.now().date()
+        )
+        
+        return True, f"Released {updated} locked savings records"
+    except Exception as e:
+        return False, str(e)
+
+
+def lock_guarantors_savings(loan):
+    """
+    Lock a portion of each guarantor's savings equal to their guarantee amount
+    """
+    try:
+        borrower = Borrower.objects.get(member=loan.member)
+        guarantors = borrower.guarantors.all()
+        
+        if not guarantors.exists():
+            return False, "No guarantors found for this loan"
+            
+        # Calculate amount to lock per guarantor (equal share of the loan amount)
+        guarantor_count = guarantors.count()
+        amount_per_guarantor = (loan.amount / Decimal(guarantor_count)).quantize(Decimal('0.01'))
+        
+        # Lock savings for each guarantor
+        for guarantor in guarantors:
+            available_savings = guarantor.get_available_savings()
+            
+            if available_savings < amount_per_guarantor:
+                return False, f"Guarantor {guarantor.name} does not have sufficient available savings. Required: {amount_per_guarantor}, Available: {available_savings}"
+                
+            # Create locked saving record
+            LockedSaving.objects.create(
+                member=guarantor,
+                loan=loan,
+                amount=amount_per_guarantor,
+                is_active=True
+            )
+            
+        return True, "Savings locked successfully"
+    except Borrower.DoesNotExist:
+        return False, "Borrower record not found"
+    except Exception as e:
+        return False, str(e)
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def loan_approvals(request):
@@ -727,15 +833,32 @@ def loan_approvals(request):
         loan_id = request.POST.get("loan_id")
         action = request.POST.get("action")
         loan = get_object_or_404(Loan, id=loan_id, status="pending")
+        
         if action == "approve":
+            # First try to lock guarantors' savings
+            success, message = lock_guarantors_savings(loan)
+            if not success:
+                # If we can't lock the savings, don't approve the loan
+                return JsonResponse({"success": False, "message": message}, status=400)
+                
+            # If we get here, savings were locked successfully
             loan.status = "approved"
             loan.cheque_number = request.POST.get("cheque_number")
             loan.cheque_date = request.POST.get("cheque_date")
             loan.save()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({"success": True, "message": "Loan approved and guarantors' savings locked"})
+                
         elif action == "reject":
             loan.status = "rejected"
             loan.save()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({"success": True, "message": "Loan rejected"})
+                
         return redirect("loan-approvals")
+        
     # GET: list all pending loans
     loans = Loan.objects.filter(status="pending").select_related("member", "loan_plan")
     return render(request, "loan_approvals.html", {"loans": loans, 'role': role})
