@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import datetime
+from django.db.models import Sum, F
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='profile')
@@ -57,6 +58,14 @@ class Member(models.Model):
     ]
     terms_of_service = models.CharField(max_length=10, choices=TERMS_OF_SERVICE_CHOICES, blank=True, null=True)
 
+    def get_available_savings(self):
+        """
+        Calculate the available savings balance by subtracting locked amounts from total savings
+        """
+        total_savings = self.savings.aggregate(total=Sum('amount'))['total'] or 0
+        total_locked = self.locked_savings.filter(is_active=True).aggregate(total=Sum('amount'))['total'] or 0
+        return max(0, total_savings - total_locked)
+        
     def __str__(self):
         return f"{self.name} ({self.membership_number})"
 
@@ -192,6 +201,26 @@ class Witness(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.id_number}) - {self.relationship}"
+
+class LockedSaving(models.Model):
+    """
+    Tracks savings that are locked due to being used as loan guarantee
+    """
+    member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name='locked_savings')
+    loan = models.ForeignKey('Loan', on_delete=models.CASCADE, related_name='locked_savings')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    date_locked = models.DateField(auto_now_add=True)
+    date_released = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"{self.member.name} - {self.amount} for Loan {self.loan.id}"
+    
+    class Meta:
+        verbose_name = 'Locked Saving'
+        verbose_name_plural = 'Locked Savings'
+        ordering = ['-date_locked']
+
 
 class SavingStatement(models.Model):
     CATEGORY_CHOICES = [
