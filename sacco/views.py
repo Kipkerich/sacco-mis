@@ -25,8 +25,6 @@ import os
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import json
-from .models import Member
-    # --- Map JSON data to models ---
 from .models import Profile, Member, Saving, Loan, LoanRepayment, LoanRepaymentSchedule, LoanProductType, LoanPlan, Borrower, SavingStatement
 from django.forms import modelformset_factory, inlineformset_factory
 def register_view(request):
@@ -252,25 +250,54 @@ def saving_add(request):
             # Try to get member from POST if form is invalid
             member_id = request.POST.get('member')
             if member_id:
-                from .models import Member, Saving
                 try:
                     member = Member.objects.get(id=member_id)
                     capital_share_total = Saving.objects.filter(member=member, category='capital_share').aggregate(total=models.Sum('amount'))['total'] or 0
                 except Member.DoesNotExist:
                     pass
-        if member and capital_share_total == 0:
-            from .models import Saving
-            capital_share_total = Saving.objects.filter(member=member, category='capital_share').aggregate(total=models.Sum('amount'))['total'] or 0
+        skip_capital_share = False
+        if member and hasattr(member, 'type'):
+            # type==1 is Junior, type==2 is Normal
+            if member.type == 1:
+                skip_capital_share = True
+        if not skip_capital_share and member and capital_share_total == 0:
+                        capital_share_total = Saving.objects.filter(member=member, category='capital_share').aggregate(total=models.Sum('amount'))['total'] or 0
         if form.is_valid():
             amount = form.cleaned_data['amount']
             date=form.cleaned_data['date']
             receiptNo = form.cleaned_data['receipt_no']
 
+            skip_capital_share = False
+            if member and hasattr(member, 'type'):
+                if member.type == 1:
+                    skip_capital_share = True
+
+            if skip_capital_share:
+                # For junior, all goes to member_deposit
+                deposit_type = form.cleaned_data.get('deposit_type')
+                Saving.objects.create(
+                    member=member,
+                    amount=amount,
+                    receipt_no=receiptNo,
+                    category='member_deposit',
+                    date=date,
+                    deposit_type=deposit_type
+                )
+                from sacco.utils import create_saving_statement
+                create_saving_statement(
+                    member=member,
+                    amount=amount,
+                    category='member_deposit',
+                    deposit_type=deposit_type,
+                    description=f"Member Deposit of {amount} (Junior)"
+                )
+                return redirect('savings')
+
             # Calculate total capital share so far
             to_capital_share = 0
             to_member_deposit = 0
             # If member hasn't reached 10,000 in capital share, allocate up to 10,000
-            if capital_share_total < 10000:
+            if capital_share_total < 10000 and member.type == 'member':
                 remaining = 10000 - capital_share_total
                 if amount <= remaining:
                     to_capital_share = amount
@@ -323,14 +350,17 @@ def saving_add(request):
         member = form.fields['member'].queryset.first() if form.fields['member'].queryset.exists() else None
         capital_share_total = 0
         if member:
-            from .models import Saving
-            capital_share_total = Saving.objects.filter(member=member, category='capital_share').aggregate(total=models.Sum('amount'))['total'] or 0
+                        capital_share_total = Saving.objects.filter(member=member, category='capital_share').aggregate(total=models.Sum('amount'))['total'] or 0
+    is_junior = False
+    if member and hasattr(member, 'type') and member.type == 1:
+        is_junior = True
     return render(request, 'saving_form.html', {
         'form': form,
         'action': 'Add',
         'capital_share_total': capital_share_total,
         'role': role,
-        'members': Member.objects.all()
+        'members': Member.objects.all(),
+        'is_junior': is_junior
     })
 
 @login_required

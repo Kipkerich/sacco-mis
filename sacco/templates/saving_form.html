@@ -22,17 +22,24 @@
         </div>
         <div class="mb-3">
             {{ form.category.label_tag }}
-            <select name="category" id="id_category" class="form-select">
-                <option value="capital_share" {% if form.category.value == 'capital_share' %}selected{% endif %}>Capital Share</option>
-                <option value="member_deposit" {% if form.category.value == 'member_deposit' %}selected{% endif %} {% if capital_share_total < 10000 %}disabled{% endif %}>Member Deposit</option>
+            <select name="category" id="id_category" class="form-select" {% if is_junior %}disabled{% endif %}>
+                {% if not is_junior %}
+                    <option value="capital_share" {% if form.category.value == 'capital_share' %}selected{% endif %}>Capital Share</option>
+                {% endif %}
+                <option value="member_deposit" {% if form.category.value == 'member_deposit' or is_junior %}selected{% endif %}>Member Deposit</option>
             </select>
+            {% if is_junior %}<input type="hidden" name="category" value="member_deposit">{% endif %}
         </div>
         <div class="mb-3">
             {{ form.deposit_type.label_tag }}
-            <select name="deposit_type" id="id_deposit_type" class="form-select">
+            <select name="deposit_type" id="id_deposit_type" class="form-select" {% if is_junior %}required{% endif %}>
                 <option value="">---------</option>
-                <option value="other">None</option>
-                {% if capital_share_total >= 10000 and form.category.value != 'capital_share' %}
+                <option value="other" {% if form.deposit_type.value == 'other' %}selected{% endif %}>None</option>
+                {% if is_junior %}
+                    <option value="school_fees" {% if form.deposit_type.value == 'school_fees' %}selected{% endif %}>School Fees</option>
+                    <option value="vacation" {% if form.deposit_type.value == 'vacation' %}selected{% endif %}>Vacation</option>
+                    <option value="other" {% if form.deposit_type.value == 'other' %}selected{% endif %}>Other</option>
+                {% elif capital_share_total >= 10000 and form.category.value != 'capital_share' %}
                     <option value="school_fees" {% if form.deposit_type.value == 'school_fees' %}selected{% endif %}>School Fees</option>
                     <option value="vacation" {% if form.deposit_type.value == 'vacation' %}selected{% endif %}>Vacation</option>
                     <option value="other" {% if form.deposit_type.value == 'other' %}selected{% endif %}>Other</option>
